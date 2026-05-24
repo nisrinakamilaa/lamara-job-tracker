@@ -1036,10 +1036,10 @@ body.dark-theme .badge-rejected {
 .side-drawer {
     position: fixed;
     top: 0;
+    bottom: 0;
     right: -450px;
     width: 100%;
     max-width: 400px;
-    height: 100vh;
     background: var(--bg-drawer);
     box-shadow: -10px 0 40px rgba(140, 168, 152, 0.12);
     z-index: 50;
@@ -1050,6 +1050,13 @@ body.dark-theme .badge-rejected {
 
 .side-drawer.active {
     right: 0;
+}
+
+.drawer-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
 }
 
 .drawer-header {
@@ -1393,6 +1400,7 @@ body.dark-theme .card-attention .dash-icon {
     position: relative;
     flex: 1;
     min-height: 200px;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1400,6 +1408,7 @@ body.dark-theme .card-attention .dash-icon {
 
 .chart-canvas-wrap canvas {
     max-height: 220px !important;
+    max-width: 100% !important;
 }
 
 .analytics-placeholder {
@@ -1707,6 +1716,27 @@ body.dark-theme .card-attention .dash-icon {
     flex-direction: column;
     gap: 2px;
     flex: 1;
+}
+
+.timeline-date-input {
+    font-size: 11px;
+    color: var(--text-muted);
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    padding: 0;
+    margin: 0;
+    width: fit-content;
+    outline: none;
+    cursor: pointer;
+}
+.timeline-date-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+}
+.timeline-date-input:focus {
+    color: var(--primary);
+    border-bottom: 1px solid var(--primary);
 }
 
 .timeline-status {

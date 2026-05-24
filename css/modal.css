@@ -334,12 +334,18 @@ textarea { resize: vertical; }
 }
 
 .drawer-footer {
-    padding-top: 24px;
+    padding: 20px 32px;
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    border-top: 1px solid var(--bg-main);
-    margin-top: 12px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-drawer);
+}
+
+@media (max-width: 560px) {
+    .drawer-footer {
+        padding: 16px 22px;
+    }
 }
 
 /* Custom Autocomplete */

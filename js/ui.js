@@ -395,7 +395,7 @@ function renderStatusHistory() {
         }
 
         const dateObj = new Date(item.date);
-        const formattedDate = !isNaN(dateObj) ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
+        const formattedDateValue = !isNaN(dateObj) ? dateObj.toISOString().split('T')[0] : '';
         const mappedLabel = CONSTANTS.STATUS_MAP[item.status] ? CONSTANTS.STATUS_MAP[item.status].label : item.status;
         const mappedLabelText = escapeHTML(mappedLabel);
 
@@ -407,7 +407,7 @@ function renderStatusHistory() {
             <div class="timeline-dot"></div>
             <div class="timeline-content">
                 <span class="timeline-status">${mappedLabelText}</span>
-                <span class="timeline-date">${formattedDate}</span>
+                <input type="date" class="timeline-date-input" value="${formattedDateValue}" onchange="window.updateStatusHistoryDate(${index}, this.value)" title="Edit Date">
                 ${durationText ? `<span class="timeline-duration">${durationText}</span>` : ''}
             </div>
             ${deleteBtnHtml}
@@ -444,6 +444,18 @@ window.removeStatusHistory = function(index) {
     }
     
     renderStatusHistory();
+};
+
+window.updateStatusHistoryDate = function(index, newDateStr) {
+    if (!window.currentEditStatusHistory || index < 0 || index >= window.currentEditStatusHistory.length) return;
+    
+    const newDate = new Date(newDateStr);
+    if (!isNaN(newDate)) {
+        // Keep the existing time part by updating only year, month, date.
+        // But since this is a simple tracker, setting the ISO string is sufficient.
+        window.currentEditStatusHistory[index].date = newDate.toISOString();
+        renderStatusHistory();
+    }
 };
 
 window.deleteJob = async function(id) {

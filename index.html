@@ -217,8 +217,8 @@
                 <i data-lucide="x"></i>
             </button>
         </div>
-        <div class="drawer-content">
-            <form id="jobForm" autocomplete="off">
+        <form id="jobForm" autocomplete="off" class="drawer-form">
+            <div class="drawer-content">
                 
                 <!-- SECTION 1: Job Details -->
                 <div class="drawer-section">
@@ -456,14 +456,12 @@
                         <label>Interview Notes</label>
                         <textarea id="jobInterviewNotes" rows="3" placeholder="Questions asked, things to improve..."></textarea>
                     </div>
-                </div>
-
-                <div class="drawer-footer">
-                    <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
-                    <button type="submit" class="btn-primary">Save Job</button>
-                </div>
-            </form>
-        </div>
+            </div>
+            <div class="drawer-footer">
+                <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                <button type="submit" class="btn-primary">Save Job</button>
+            </div>
+        </form>
     </div>
 
     <!-- Auth Modal -->
