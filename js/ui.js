@@ -616,10 +616,12 @@ window.editJob = function(id) {
     document.getElementById('jobSalary').value = job.salary || '';
     document.getElementById('jobInterviewNotes').value = job.interviewNotes || '';
 
-    if (job.statusHistory) {
+    if (Array.isArray(job.statusHistory) && job.statusHistory.length > 0) {
         window.currentEditStatusHistory = JSON.parse(JSON.stringify(job.statusHistory));
     } else {
         window.currentEditStatusHistory = [{ status: job.status, date: job.date || new Date().toISOString() }];
+        job.statusHistory = JSON.parse(JSON.stringify(window.currentEditStatusHistory));
+        saveToLocalStorage();
     }
     renderStatusHistory();
 

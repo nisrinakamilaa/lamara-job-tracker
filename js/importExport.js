@@ -120,7 +120,12 @@ window.importFromCSV = function(file) {
                 cvVersion: rawCols[13] || '',
                 interviewNotes: rawCols[14] || '',
                 reminderNotes: rawCols[15] || '',
-                notes: rawCols[16] || ''
+                notes: rawCols[16] || '',
+                hasCvFile: false,
+                statusHistory: [{
+                    status: rawCols[6] || 'applied',
+                    date: rawCols[5] || new Date().toISOString()
+                }]
             };
             
             // Avoid duplicate IDs
