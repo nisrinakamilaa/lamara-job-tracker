@@ -1,0 +1,417 @@
+/* ==========================================================================
+   FORM CUSTOM DROPDOWN
+   ========================================================================== */
+.form-custom-dropdown {
+    width: 100%;
+    min-width: 0;
+}
+
+.form-custom-dropdown .dropdown-header {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+}
+
+.form-custom-dropdown #formDropdownSelected,
+.form-custom-dropdown #priorityDropdownSelected,
+.form-custom-dropdown #formPlatformSelected {
+    font-size: 13px;
+}
+
+.form-custom-dropdown.open .dropdown-header {
+    background: var(--bg-card);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(140, 168, 152, 0.2);
+}
+
+.form-custom-dropdown .dropdown-list {
+    width: 100%;
+}
+
+.form-custom-dropdown .dropdown-list li {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Custom Date Picker Wrapper */
+.custom-date-picker {
+    position: relative;
+    width: 100%;
+    z-index: 1;
+}
+
+.custom-date-picker.open {
+    z-index: 300;
+}
+
+.date-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.date-input-wrapper input {
+    padding-right: 40px;
+    cursor: pointer;
+}
+
+.date-input-wrapper .calendar-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary);
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+}
+
+.calendar-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 236px;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    z-index: 150;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-date-picker.open .calendar-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    background: var(--bg-main);
+    padding: 4px 8px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.calendar-header button {
+    background: transparent;
+    border: none;
+    color: var(--primary-dark);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    transition: var(--transition);
+}
+
+.calendar-header button:hover {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+.calendar-header button i {
+    width: 14px;
+    height: 14px;
+}
+
+.cal-month-year {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    margin-bottom: 6px;
+}
+
+.calendar-weekdays span {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 8px;
+}
+
+.calendar-days span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-dark);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.calendar-days span:hover {
+    background: var(--bg-main);
+    color: var(--primary-dark);
+}
+
+.calendar-days span.prev-month,
+.calendar-days span.next-month {
+    color: var(--text-light);
+}
+
+.calendar-days span.today {
+    border: 1.5px solid var(--primary);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.calendar-days span.selected {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+    color: white !important;
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+}
+
+.calendar-footer {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--border-color);
+    padding-top: 8px;
+    gap: 6px;
+}
+
+.calendar-footer button {
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+}
+
+.cal-btn-clear {
+    background: var(--bg-card);
+    color: var(--primary-dark);
+    border: 1px solid var(--primary-light) !important;
+}
+
+.cal-btn-clear:hover {
+    background: var(--bg-main);
+    border-color: var(--primary) !important;
+}
+
+.cal-btn-today {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+}
+
+.cal-btn-today:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+
+.required { color: var(--primary); }
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="url"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--input-text);
+    transition: var(--transition);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.85;
+}
+
+input[type="file"] {
+    width: 100%;
+    padding: 6px 12px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+    background: var(--bg-card);
+    color: var(--text-dark);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 12px;
+    transition: var(--transition);
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary-dark);
+}
+
+body.dark-theme input[type="file"] {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+}
+
+body.dark-theme input[type="file"]::file-selector-button {
+    background: var(--bg-card);
+    color: var(--text-dark);
+    border: 1px solid var(--border-color);
+}
+
+body.dark-theme input[type="file"]::file-selector-button:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary-dark);
+}
+
+input:focus, select:focus, textarea:focus {
+    background: var(--bg-card);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(140, 168, 152, 0.2);
+}
+
+textarea { resize: vertical; }
+
+/* Input with Icon */
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon i,
+.input-with-icon svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+.input-with-icon input {
+    padding-left: 40px;
+}
+
+.drawer-footer {
+    padding-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid var(--bg-main);
+    margin-top: 12px;
+}
+
+/* Custom Autocomplete */
+.custom-autocomplete {
+    position: relative;
+    width: 100%;
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    list-style: none;
+    padding: 6px;
+    margin: 0;
+    z-index: 160;
+    display: none; /* Hidden by default */
+}
+
+.autocomplete-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+.autocomplete-dropdown::-webkit-scrollbar-track {
+    background: transparent;
+}
+.autocomplete-dropdown::-webkit-scrollbar-thumb {
+    background-color: var(--primary-light);
+    border-radius: 10px;
+}
+
+.autocomplete-dropdown li {
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.autocomplete-dropdown li:hover,
+.autocomplete-dropdown li.active {
+    background: var(--bg-main);
+    color: var(--primary-dark);
+}
+
+.autocomplete-dropdown li span.type-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+body.dark-theme .autocomplete-dropdown li span.type-tag {
+    background: var(--primary-dark);
+    color: var(--text-dark);
+}
+
+.platform-text {
+    color: var(--text-light);
+    font-size: 11px;
+    font-weight: 500;
+}
+

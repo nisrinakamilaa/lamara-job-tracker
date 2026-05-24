@@ -1,0 +1,284 @@
+/* ==========================================================================
+   ELEGANT UNISEX SAGE DESIGN SYSTEM
+   ========================================================================== */
+
+:root {
+    /* Fonts */
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Inter', sans-serif;
+
+    /* Color Palette - Sage, Taupe, Dusty Pink (Warm & Eye-Friendly) */
+    --bg-main: #F8F6F2;         /* Warm cream with a soft sage undertone */
+    --bg-card: #FFFFFF;         /* Clean card surface */
+    --bg-drawer: #FFFFFF;
+    
+    --primary-light: #EEF3EA;   /* Muted sage light */
+    --primary: #8B9E8A;         /* Balanced sage green */
+    --primary-dark: #59745D;    /* Deep sage */
+    --accent-taupe: #D9C4B4;    /* Soft taupe */
+    --accent-taupe-light: #F2E8E0;
+    --accent-pink: #E6B0B8;     /* Dusty pink */
+    --accent-pink-light: #F8E8EA;
+    --accent-lavender: #B9AACF; /* Muted lavender */
+    --accent-lavender-light: #EEE8F4;
+    
+    --text-dark: #23342E;       /* Deep Forest Charcoal */
+    --text-muted: #6D7D72;      /* Muted Green-Grey */
+    --text-light: #9AA99E;      /* Light Sage-Grey */
+    
+    --border-color: #DEDCD2;    /* Warm sage-taupe border */
+    
+    --bg-nav: rgba(255, 255, 255, 0.85);
+    --bg-empty: rgba(238, 243, 234, 0.5);
+    --bg-overlay: rgba(47, 62, 54, 0.25);
+
+    --input-bg: #FAF8F4;
+    --input-border: #DEDCD2;
+    --input-text: #23342E;
+    
+    /* Kanban Status Colors (Soft Pastels) */
+    --color-saved: #E2E8F0;     /* Slate 200 */
+    --color-applied: #BFDBFE;   /* Blue 200 */
+    --color-interview: #E9D5FF; /* Purple 200 */
+    --color-offered: #BBF7D0;   /* Green 200 */
+    --color-rejected: #FECDD3;  /* Rose 200 */
+    
+    /* Shadows - adjusted to use sage green tone */
+    --shadow-sm: 0 2px 8px rgba(89, 116, 93, 0.06);
+    --shadow-md: 0 8px 24px rgba(89, 116, 93, 0.12);
+    --shadow-lg: 0 12px 32px rgba(89, 116, 93, 0.18);
+    
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-pill: 9999px;
+
+    /* Transitions */
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Primary Button variables */
+    --btn-primary-bg: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    --btn-primary-text: white;
+
+    /* Shared table/list layout */
+    --job-list-columns: minmax(260px, 2.2fr) 120px 110px minmax(140px, 1.2fr) 120px 164px;
+}
+
+body.dark-theme {
+    --bg-main: #121A16;         /* Soft botanical charcoal, less pitch-black */
+    --bg-card: #1B2520;         /* Lifted sage-charcoal for cards/sections */
+    --bg-drawer: #1D2822;       /* Slightly brighter drawer for comfortable editing */
+    
+    --primary-light: #2B3A32;   /* Deeper forest green background accent */
+    --primary: #9BC2AC;         /* Brighter pastel sage green for readability */
+    --primary-dark: #C2DEC9;    /* Light sage mint for highlighted text */
+    --accent-taupe: #A98F7F;
+    --accent-taupe-light: #332B26;
+    --accent-pink: #C68E98;
+    --accent-pink-light: #3A2930;
+    --accent-lavender: #A99AC2;
+    --accent-lavender-light: #302D3B;
+    
+    --text-dark: #E6EFEA;       /* Crisp minty white for high readability */
+    --text-muted: #A8BDB2;      /* Softer minty grey for secondary text */
+    --text-light: #7F9589;      /* Readable grey-green for placeholder/subtle text */
+    
+    --border-color: #34443B;    /* Noticeable forest green border */
+    
+    --bg-nav: rgba(27, 37, 32, 0.88);
+    --bg-empty: rgba(43, 58, 50, 0.32);
+    --bg-overlay: rgba(8, 14, 11, 0.54);
+
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+
+    /* Primary Button variables */
+    --btn-primary-bg: linear-gradient(135deg, #3A5144, #26382F);
+    --btn-primary-text: #E6EFEA;
+
+    --input-bg: #111A15;
+    --input-border: var(--border-color);
+    --input-text: var(--text-dark);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    outline: none;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--primary-light); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+/* ==========================================================================
+   RESPONSIVE LIST FINISHING
+   ========================================================================== */
+@media (max-width: 920px) {
+    .list-container-wrapper {
+        padding: 28px 20px 28px;
+    }
+
+    .toolbar {
+        align-items: stretch;
+    }
+
+    .search-box,
+    .toolbar-right,
+    .toolbar-actions-small,
+    .custom-dropdown {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .toolbar-right {
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .toolbar-actions-small {
+        flex-wrap: wrap;
+    }
+
+    .btn-sm {
+        flex: 1 1 120px;
+        justify-content: center;
+    }
+
+    .list-header {
+        display: none;
+    }
+
+    .job-row {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding: 18px;
+        min-height: 0;
+    }
+
+    .row-position {
+        gap: 8px;
+    }
+
+    .row-status,
+    .col-priority,
+    .col-next-step,
+    .row-date,
+    .row-actions {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .row-status::before,
+    .col-priority::before,
+    .col-next-step::before,
+    .row-date::before {
+        min-width: 96px;
+        font-family: var(--font-heading);
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .row-status::before { content: 'Status'; }
+    .col-priority::before { content: 'Priority'; }
+    .col-next-step::before { content: 'Location'; }
+    .row-date::before { content: 'Applied'; }
+
+    .row-actions {
+        min-width: 0;
+        padding-top: 4px;
+    }
+}
+
+@media (max-width: 560px) {
+    .top-nav {
+        padding: 14px 18px;
+    }
+
+    .nav-actions {
+        gap: 10px;
+    }
+
+    .btn-primary {
+        padding: 10px 14px;
+    }
+
+    .list-container-wrapper {
+        padding: 22px 14px 24px;
+        gap: 16px;
+    }
+
+    .toolbar {
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .search-box {
+        min-width: 0;
+    }
+
+    .company-info {
+        grid-template-columns: 20px minmax(0, 1fr);
+        column-gap: 6px;
+    }
+
+    .company-info svg,
+    .company-info i {
+        width: 16px;
+        height: 16px;
+    }
+
+    .row-status::before,
+    .col-priority::before,
+    .col-next-step::before,
+    .row-date::before {
+        min-width: 78px;
+    }
+
+    .side-drawer {
+        max-width: none;
+        right: -100%;
+    }
+
+    .drawer-header,
+    .drawer-content {
+        padding-left: 22px;
+        padding-right: 22px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Spinner Animation */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { animation: spin 1s linear infinite; }
+
+/* Password Input */
+.password-input-wrapper { position: relative; display: flex; align-items: center; }
+.password-input-wrapper input { width: 100%; padding-right: 44px; }
+.password-toggle-btn { position: absolute; right: 12px; background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: color 0.2s; }
+.password-toggle-btn:hover { color: var(--text-primary); }
+.password-toggle-btn i { width: 18px; height: 18px; }
+
+.danger-text { color: var(--danger) !important; }
+.danger-text:hover { background-color: rgba(220, 38, 38, 0.1) !important; }

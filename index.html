@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lamara | Your Career Tracker</title>
+    <!-- Elegant Fonts: Plus Jakarta Sans for headings, Inter for body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS for Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="css/main.css?v=20">
+    <link rel="stylesheet" href="css/components.css?v=20">
+    <link rel="stylesheet" href="css/modal.css?v=20">
+</head>
+<body>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.body.classList.add('dark-theme');
+            }
+        })();
+    </script>
+
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="logo-circle">
+                <i data-lucide="sparkles" class="logo-icon"></i>
+            </div>
+            <div class="brand-text">
+                <h1 class="brand-title">Lamara</h1>
+                <span class="brand-subtitle">Track every application, one step closer to your next role.</span>
+            </div>
+        </div>
+        <div class="nav-actions">
+            <button class="btn-theme-toggle" id="themeToggleBtn" title="Toggle Theme">
+                <i data-lucide="sun" class="sun-icon"></i>
+                <i data-lucide="moon" class="moon-icon"></i>
+            </button>
+            <div class="account-control" id="authStatus">
+                <button class="btn-auth" id="accountBtn" title="Account">
+                    <i data-lucide="user-round"></i>
+                    <span id="accountLabel" class="sr-only">Account</span>
+                </button>
+                <div class="account-menu" id="accountMenu" hidden>
+                    <div class="account-menu-status">
+                        <span class="account-menu-label">Sync status</span>
+                        <span class="auth-status" id="authEmail">Guest mode</span>
+                    </div>
+                    <button class="account-menu-action" id="loginBtn">
+                        <i data-lucide="log-in"></i>
+                        <span>Sign in</span>
+                    </button>
+                    <button class="account-menu-action" id="setPasswordBtn" hidden>
+                        <i data-lucide="key-round"></i>
+                        <span>Set password</span>
+                    </button>
+                    <button class="account-menu-action" id="logoutBtn" hidden>
+                        <i data-lucide="log-out"></i>
+                        <span>Sign out</span>
+                    </button>
+                    <button class="account-menu-action danger-text" id="deleteAccountBtn" hidden>
+                        <i data-lucide="trash-2"></i>
+                        <span>Delete account</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN LIST VIEW -->
+    <main class="list-container-wrapper">
+        
+        <!-- DASHBOARD SECTION -->
+        <div class="dashboard-section">
+            <div class="dashboard-cards dashboard-pulse">
+                <div class="dash-card dash-card-feature card-total">
+                    <span class="dash-icon"><i data-lucide="layers"></i></span>
+                    <div class="dash-info">
+                        <span class="dash-kicker">Application Summary</span>
+                        <h4 id="dashTotal">0</h4>
+                        <p>Total applications saved</p>
+                        <span class="dash-subtitle" id="dashPulseInsight"></span>
+                    </div>
+                    <div class="pulse-focus">
+                        <span>To Check</span>
+                        <strong id="dashFocusTitle">No follow-up yet</strong>
+                        <small id="dashFocusMeta">Add a follow-up date when needed.</small>
+                    </div>
+                </div>
+                <div class="dash-mini-grid">
+                    <div class="dash-card dash-card-mini card-progress">
+                        <span class="dash-icon"><i data-lucide="clock"></i></span>
+                        <div class="dash-info">
+                            <h4 id="dashInProgress">0</h4>
+                            <p>Active</p>
+                        </div>
+                    </div>
+                    <div class="dash-card dash-card-mini card-interview">
+                        <span class="dash-icon"><i data-lucide="mic"></i></span>
+                        <div class="dash-info">
+                            <h4 id="dashInterview">0</h4>
+                            <p>Interviews</p>
+                            <span class="dash-subtitle" id="dashHitRate"></span>
+                        </div>
+                    </div>
+                    <div class="dash-card dash-card-mini card-offer">
+                        <span class="dash-icon"><i data-lucide="award"></i></span>
+                        <div class="dash-info">
+                            <h4 id="dashOffer">0</h4>
+                            <p>Offer</p>
+                        </div>
+                    </div>
+                    <div class="dash-card dash-card-mini card-attention">
+                        <span class="dash-icon"><i data-lucide="bell-ring"></i></span>
+                        <div class="dash-info">
+                            <h4 id="dashAttention">0</h4>
+                            <p>To Check</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="charts-wrapper">
+                <div class="chart-card chart-card-donut">
+                    <h5 class="chart-title">Status Breakdown</h5>
+                    <div class="chart-canvas-wrap">
+                        <div id="analyticsPlaceholder" class="analytics-placeholder" style="display: none;">No data yet</div>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card chart-card-bar">
+                    <h5 class="chart-title">Application Activity</h5>
+                    <div class="chart-canvas-wrap">
+                        <div id="activityPlaceholder" class="analytics-placeholder" style="display: none;">No data yet</div>
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOOLBAR (Search & Filters) -->
+        <div class="toolbar">
+            <div class="search-box">
+                <i data-lucide="search"></i>
+                <input type="text" id="searchInput" placeholder="Search by position or company...">
+            </div>
+            
+            <!-- Toolbar Right Side -->
+            <div class="toolbar-right">
+                <div class="toolbar-actions-small">
+                    <input type="file" id="importCsvInput" accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" hidden>
+                    <button class="btn-sm" id="importBtn" title="Import CSV"><i data-lucide="upload"></i><span>Import</span></button>
+                    <button class="btn-sm" id="exportBtn" title="Export CSV"><i data-lucide="download"></i><span>Export</span></button>
+                    <button class="btn-sm danger" id="clearDataBtn" title="Clear All Data"><i data-lucide="trash-2"></i><span>Clear All</span></button>
+                </div>
+                
+                <!-- Custom Dropdown -->
+                <div class="custom-dropdown" id="statusDropdown">
+                    <div class="dropdown-header" id="dropdownHeader">
+                        <i data-lucide="filter" class="filter-icon"></i>
+                        <span id="dropdownSelected">All Status</span>
+                        <i data-lucide="chevron-down" class="chevron-icon"></i>
+                    </div>
+                    <ul class="dropdown-list" id="dropdownList">
+                        <li data-value="all" class="selected">All Status</li>
+                        <li data-value="applied">Applied</li>
+                        <li data-value="psychotest">Psychotest</li>
+                        <li data-value="interview-hr">Interview HR</li>
+                        <li data-value="interview-user">Interview User</li>
+                        <li data-value="mcu">MCU</li>
+                        <li data-value="offering">Offer Letter</li>
+                        <li data-value="accepted">Accepted</li>
+                        <li data-value="rejected">Rejected</li>
+                        <li data-value="ghosted">Ghosted</li>
+                        <li data-value="withdrawn">Withdrawn</li>
+                    </ul>
+                </div>
+                <button class="btn-sm primary" id="openDrawerBtn" title="Add Job"><i data-lucide="plus"></i><span>Add Job</span></button>
+            </div>
+        </div>
+
+        <!-- LIST HEADER (Table-like columns) -->
+        <div class="list-header">
+            <div class="col-position">Position & Company</div>
+            <div class="col-status">Status</div>
+            <div class="col-priority">Priority</div>
+            <div class="col-next-step">Location</div>
+            <div class="col-date">Date Applied</div>
+            <div class="col-actions">Actions</div>
+        </div>
+
+        <!-- LIST ITEMS -->
+        <div class="list-body" id="listBody">
+            <!-- Rows will be injected here -->
+        </div>
+
+        <!-- PAGINATION CONTROLS -->
+        <div class="pagination-controls" id="paginationControls"></div>
+
+    </main>
+
+    <!-- SLIDE-OUT DRAWER (ADD/EDIT JOB) -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <h3>Add New Opportunity</h3>
+            <button class="btn-close" id="closeDrawerBtn">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="drawer-content">
+            <form id="jobForm" autocomplete="off">
+                
+                <!-- SECTION 1: Job Details -->
+                <div class="drawer-section">
+                    <div class="form-group">
+                        <label>Job URL / Link</label>
+                        <div class="input-with-icon">
+                            <i data-lucide="link-2"></i>
+                            <input type="url" id="jobUrl" placeholder="Paste job link here...">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Position / Title <span class="required">*</span></label>
+                        <input type="text" id="jobTitle" required placeholder="e.g. Software Engineer">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Company <span class="required">*</span></label>
+                        <input type="text" id="jobCompany" required placeholder="e.g. Shopee">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location</label>
+                        <div class="custom-autocomplete" id="locationAutocomplete">
+                            <div class="input-with-icon">
+                                <i data-lucide="map-pin"></i>
+                                <input type="text" id="jobLocation" placeholder="e.g. Jakarta" autocomplete="off">
+                            </div>
+                            <ul class="autocomplete-dropdown" id="locationDropdown"></ul>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Platform</label>
+                        <div class="custom-autocomplete" id="platformAutocomplete">
+                            <div class="input-with-icon">
+                                <i data-lucide="layout-grid"></i>
+                                <input type="text" id="jobPlatform" placeholder="e.g. LinkedIn" autocomplete="off">
+                            </div>
+                            <ul class="autocomplete-dropdown" id="platformDropdown"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: Status & Pipeline -->
+                <div class="drawer-section">
+                    <h4 class="section-title">Application Status</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <div class="custom-dropdown form-custom-dropdown" id="priorityDropdown">
+                                <div class="dropdown-header" id="priorityDropdownHeader">
+                                    <span id="priorityDropdownSelected">Medium</span>
+                                    <i data-lucide="chevron-down" class="chevron-icon"></i>
+                                </div>
+                                <ul class="dropdown-list" id="priorityDropdownList">
+                                    <li data-value="High">High</li>
+                                    <li data-value="Medium" class="selected">Medium</li>
+                                    <li data-value="Low">Low</li>
+                                </ul>
+                                <input type="hidden" id="jobPriority" value="Medium">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <div class="custom-dropdown form-custom-dropdown" id="formStatusDropdown">
+                                <div class="dropdown-header" id="formDropdownHeader">
+                                    <span id="formDropdownSelected">Applied</span>
+                                    <i data-lucide="chevron-down" class="chevron-icon"></i>
+                                </div>
+                                <ul class="dropdown-list" id="formDropdownList">
+                                    <li data-value="applied" class="selected">Applied</li>
+                                    <li data-value="psychotest">Psychotest</li>
+                                    <li data-value="interview-hr">Interview HR</li>
+                                    <li data-value="interview-user">Interview User</li>
+                                    <li data-value="mcu">MCU</li>
+                                    <li data-value="offering">Offer Letter</li>
+                                    <li data-value="accepted">Accepted</li>
+                                    <li data-value="rejected">Rejected</li>
+                                    <li data-value="ghosted">Ghosted</li>
+                                    <li data-value="withdrawn">Withdrawn</li>
+                                </ul>
+                                <input type="hidden" id="jobStatus" value="applied">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Visual Pipeline -->
+                    <div class="visual-pipeline">
+                        <div class="pipeline-step active" data-step="applied">
+                            <div class="step-dot"></div><span class="step-label">Applied</span>
+                        </div>
+                        <div class="pipeline-line"></div>
+                        <div class="pipeline-step" data-step="psychotest">
+                            <div class="step-dot"></div><span class="step-label">Test</span>
+                        </div>
+                        <div class="pipeline-line"></div>
+                        <div class="pipeline-step" data-step="interview-hr">
+                            <div class="step-dot"></div><span class="step-label">HR Int.</span>
+                        </div>
+                        <div class="pipeline-line"></div>
+                        <div class="pipeline-step" data-step="interview-user">
+                            <div class="step-dot"></div><span class="step-label">User Int.</span>
+                        </div>
+                        <div class="pipeline-line"></div>
+                        <div class="pipeline-step" data-step="mcu">
+                            <div class="step-dot"></div><span class="step-label">MCU</span>
+                        </div>
+                        <div class="pipeline-line"></div>
+                        <div class="pipeline-step" data-step="offering">
+                            <div class="step-dot"></div><span class="step-label">Offer</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Status History Timeline -->
+                    <div id="statusHistoryTimeline" class="status-timeline">
+                        <!-- Timeline items injected here via JS -->
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Deadlines & Reminders -->
+                <div class="drawer-section">
+                    <h4 class="section-title">Timeline & Reminders</h4>
+                    
+                    <div class="form-group">
+                        <label>Date Applied</label>
+                        <div class="custom-date-picker">
+                            <div class="date-input-wrapper">
+                                <input type="text" class="styled-date-display" readonly placeholder="DD / MM / YYYY">
+                                <input type="hidden" id="jobDate" class="styled-date-hidden">
+                                <i data-lucide="calendar" class="calendar-icon"></i>
+                            </div>
+                            <div class="calendar-dropdown">
+                                <div class="calendar-header">
+                                    <button type="button" class="calPrevBtn"><i data-lucide="chevron-left"></i></button>
+                                    <span class="cal-month-year calMonthYear"></span>
+                                    <button type="button" class="calNextBtn"><i data-lucide="chevron-right"></i></button>
+                                </div>
+                                <div class="calendar-weekdays">
+                                    <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                </div>
+                                <div class="calendar-days calDays"></div>
+                                <div class="calendar-footer">
+                                    <button type="button" class="cal-btn-clear calClearBtn">Clear</button>
+                                    <button type="button" class="cal-btn-today calTodayBtn">Today</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row date-row">
+                        <div class="form-group">
+                            <label>Deadline Date</label>
+                            <div class="custom-date-picker">
+                                <div class="date-input-wrapper">
+                                    <input type="text" class="styled-date-display" readonly placeholder="DD / MM / YYYY">
+                                    <input type="hidden" id="jobDeadline" class="styled-date-hidden">
+                                    <i data-lucide="calendar" class="calendar-icon"></i>
+                                </div>
+                                <div class="calendar-dropdown">
+                                    <div class="calendar-header">
+                                        <button type="button" class="calPrevBtn"><i data-lucide="chevron-left"></i></button>
+                                        <span class="cal-month-year calMonthYear"></span>
+                                        <button type="button" class="calNextBtn"><i data-lucide="chevron-right"></i></button>
+                                    </div>
+                                    <div class="calendar-weekdays">
+                                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                    </div>
+                                    <div class="calendar-days calDays"></div>
+                                    <div class="calendar-footer">
+                                        <button type="button" class="cal-btn-clear calClearBtn">Clear</button>
+                                        <button type="button" class="cal-btn-today calTodayBtn">Today</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Next Follow-up</label>
+                            <div class="custom-date-picker">
+                                <div class="date-input-wrapper">
+                                    <input type="text" class="styled-date-display" readonly placeholder="DD / MM / YYYY">
+                                    <input type="hidden" id="jobFollowUp" class="styled-date-hidden">
+                                    <i data-lucide="calendar" class="calendar-icon"></i>
+                                </div>
+                                <div class="calendar-dropdown">
+                                    <div class="calendar-header">
+                                        <button type="button" class="calPrevBtn"><i data-lucide="chevron-left"></i></button>
+                                        <span class="cal-month-year calMonthYear"></span>
+                                        <button type="button" class="calNextBtn"><i data-lucide="chevron-right"></i></button>
+                                    </div>
+                                    <div class="calendar-weekdays">
+                                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                    </div>
+                                    <div class="calendar-days calDays"></div>
+                                    <div class="calendar-footer">
+                                        <button type="button" class="cal-btn-clear calClearBtn">Clear</button>
+                                        <button type="button" class="cal-btn-today calTodayBtn">Today</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Reminder Notes</label>
+                        <input type="text" id="jobReminderNotes" placeholder="e.g. Follow up HR 3 days after interview">
+                    </div>
+                </div>
+
+                <!-- SECTION 4: Structured Notes -->
+                <div class="drawer-section">
+                    <h4 class="section-title">Structured Notes</h4>
+                    
+                    <div class="form-group">
+                        <label>Why I applied / Job Desc Summary</label>
+                        <textarea id="jobDescSummary" rows="2" placeholder="Brief summary of the role..."></textarea>
+                    </div>
+
+
+
+                    <div class="form-group">
+                        <label>Upload CV File</label>
+                        <input type="file" id="jobCvFile" accept=".pdf,.doc,.docx,.txt,image/*">
+                        <div id="cvFileStatus" style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px;"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Salary Range (Expected / Offered)</label>
+                            <input type="text" id="jobSalary" placeholder="e.g. 8 - 12 Jt">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Interview Notes</label>
+                        <textarea id="jobInterviewNotes" rows="3" placeholder="Questions asked, things to improve..."></textarea>
+                    </div>
+                </div>
+
+                <div class="drawer-footer">
+                    <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="auth-modal" id="authModal" hidden>
+        <div class="auth-dialog">
+            <div class="auth-dialog-header">
+                <div>
+                    <h3 id="authTitle">Sign in to Lamara</h3>
+                    <p id="authSubtitle">Save your applications across browsers and devices.</p>
+                </div>
+                <button type="button" class="btn-close" id="closeAuthModalBtn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="authForm" class="auth-form" novalidate>
+                <p class="auth-error" id="authError" hidden></p>
+                <div class="form-group" id="authEmailGroup">
+                    <label>Email</label>
+                    <input type="email" id="authEmailInput" placeholder="you@example.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label id="authPasswordLabel">Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="authPasswordInput" placeholder="Minimum 6 characters" autocomplete="current-password">
+                        <button type="button" class="password-toggle-btn" tabindex="-1" title="Toggle password visibility">
+                            <i data-lucide="eye-off"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group" id="authConfirmPasswordGroup" hidden>
+                    <label>Confirm new password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="authConfirmPasswordInput" placeholder="Minimum 6 characters" autocomplete="new-password">
+                        <button type="button" class="password-toggle-btn" tabindex="-1" title="Toggle password visibility">
+                            <i data-lucide="eye-off"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="auth-text-btn" id="authResetBtn">Reset password</button>
+                <div class="auth-dialog-actions">
+                    <button type="button" class="btn-secondary" id="authSignupBtn">Create account</button>
+                    <button type="submit" class="btn-primary" id="authSubmitBtn">Sign in</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Empty State Template -->
+    <template id="emptyStateTemplate">
+        <div class="empty-state">
+            <div class="empty-icon-wrapper">
+                <i data-lucide="folder-heart"></i>
+            </div>
+            <p>No jobs here yet.</p>
+            <span>Let's find your dream job!</span>
+        </div>
+    </template>
+
+    <!-- Export Modal -->
+    <div class="modal-overlay" id="exportModal">
+        <div class="modal-content" style="max-width: 320px; text-align: center;">
+            <div class="modal-header">
+                <h3>Export Data</h3>
+                <button class="modal-close" onclick="document.getElementById('exportModal').classList.remove('active')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="export-options">
+                <button class="export-card" id="exportCsvBtn">
+                    <div class="export-icon csv-icon">
+                        <i data-lucide="file-text"></i>
+                    </div>
+                    <div class="export-text">
+                        <h4>CSV File</h4>
+                        <p>Standard .csv format</p>
+                    </div>
+                </button>
+                <button class="export-card" id="exportExcelBtn">
+                    <div class="export-icon excel-icon">
+                        <i data-lucide="table"></i>
+                    </div>
+                    <div class="export-text">
+                        <h4>Microsoft Excel</h4>
+                        <p>Standard .xlsx format</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js?v=22"></script>
+    <script src="js/utils.js?v=22"></script>
+    <script src="js/dom.js?v=22"></script>
+    <script src="js/state.js?v=22"></script>
+    <script src="js/auth.js?v=22"></script>
+    <script src="js/ui.js?v=22"></script>
+    <script src="js/importExport.js?v=22"></script>
+    <script src="js/app.js?v=22"></script>
+</body>
+</html>
