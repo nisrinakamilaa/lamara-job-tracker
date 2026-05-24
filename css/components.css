@@ -1718,25 +1718,37 @@ body.dark-theme .card-attention .dash-icon {
     flex: 1;
 }
 
-.timeline-date-input {
-    font-size: 11px;
+.timeline-date-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    cursor: pointer;
+}
+.timeline-date-wrapper:hover .edit-date-icon {
+    opacity: 1;
+}
+.edit-date-icon {
+    width: 11px;
+    height: 11px;
     color: var(--text-muted);
-    border: none;
-    background: transparent;
-    font-family: inherit;
+    opacity: 0.6;
+    pointer-events: none;
+}
+.timeline-date-picker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
     padding: 0;
     margin: 0;
-    width: fit-content;
-    outline: none;
-    cursor: pointer;
-}
-.timeline-date-input::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    opacity: 0.6;
-}
-.timeline-date-input:focus {
-    color: var(--primary);
-    border-bottom: 1px solid var(--primary);
+    border: none;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
 .timeline-status {

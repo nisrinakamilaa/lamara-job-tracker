@@ -396,6 +396,7 @@ function renderStatusHistory() {
 
         const dateObj = new Date(item.date);
         const formattedDateValue = !isNaN(dateObj) ? dateObj.toISOString().split('T')[0] : '';
+        const displayDate = !isNaN(dateObj) ? `${String(dateObj.getDate()).padStart(2, '0')} / ${String(dateObj.getMonth() + 1).padStart(2, '0')} / ${dateObj.getFullYear()}` : '-';
         const mappedLabel = CONSTANTS.STATUS_MAP[item.status] ? CONSTANTS.STATUS_MAP[item.status].label : item.status;
         const mappedLabelText = escapeHTML(mappedLabel);
 
@@ -407,7 +408,28 @@ function renderStatusHistory() {
             <div class="timeline-dot"></div>
             <div class="timeline-content">
                 <span class="timeline-status">${mappedLabelText}</span>
-                <input type="date" class="timeline-date-input" value="${formattedDateValue}" onchange="window.updateStatusHistoryDate(${index}, this.value)" title="Edit Date">
+                <div class="custom-date-picker timeline-custom-date" style="position: relative;">
+                    <div class="date-input-wrapper timeline-date-wrapper" style="border: none; background: transparent; padding: 0; min-height: auto; width: fit-content; gap: 4px;" title="Click to edit date" onclick="this.querySelector('.styled-date-display').click()">
+                        <input type="text" class="styled-date-display timeline-date-text" readonly style="border: none; background: transparent; padding: 0; font-size: 11px; color: var(--text-muted); cursor: pointer; width: 75px; text-overflow: ellipsis; white-space: nowrap;" value="${displayDate}">
+                        <input type="hidden" class="styled-date-hidden" value="${formattedDateValue}" onchange="window.updateStatusHistoryDate(${index}, this.value)">
+                        <i data-lucide="pencil" class="calendar-icon edit-date-icon" style="width: 11px; height: 11px; opacity: 0.6; position: static; transform: none; color: var(--text-muted); margin: 0; pointer-events: none;"></i>
+                    </div>
+                    <div class="calendar-dropdown" style="top: 100%; right: auto; left: 0;">
+                        <div class="calendar-header">
+                            <button type="button" class="calPrevBtn"><i data-lucide="chevron-left"></i></button>
+                            <span class="cal-month-year calMonthYear"></span>
+                            <button type="button" class="calNextBtn"><i data-lucide="chevron-right"></i></button>
+                        </div>
+                        <div class="calendar-weekdays">
+                            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                        </div>
+                        <div class="calendar-days calDays"></div>
+                        <div class="calendar-footer">
+                            <button type="button" class="cal-btn-clear calClearBtn">Clear</button>
+                            <button type="button" class="cal-btn-today calTodayBtn">Today</button>
+                        </div>
+                    </div>
+                </div>
                 ${durationText ? `<span class="timeline-duration">${durationText}</span>` : ''}
             </div>
             ${deleteBtnHtml}
@@ -418,6 +440,9 @@ function renderStatusHistory() {
     if (window.lucide) {
         window.lucide.createIcons({ nameAttr: 'data-lucide' });
     }
+    
+    // Re-initialize any new custom date pickers added
+    initCustomDatePicker();
 }
 
 window.removeStatusHistory = function(index) {
@@ -609,6 +634,9 @@ function initCustomDatePicker() {
     const pickers = document.querySelectorAll('.custom-date-picker');
     
     pickers.forEach(picker => {
+        if (picker.dataset.initialized) return;
+        picker.dataset.initialized = 'true';
+
         const displayInput = picker.querySelector('.styled-date-display');
         const hiddenInput = picker.querySelector('.styled-date-hidden');
         const dropdown = picker.querySelector('.calendar-dropdown');
@@ -622,14 +650,20 @@ function initCustomDatePicker() {
         let currentCalDate = new Date();
         let selectedCalDate = null;
 
-        // Default Date Applied to today
-        if (hiddenInput.id === 'jobDate') {
+        // Default Date Applied to today if empty
+        if (hiddenInput.id === 'jobDate' && !hiddenInput.value) {
             selectedCalDate = new Date();
             const yyyy = selectedCalDate.getFullYear();
             const mm = String(selectedCalDate.getMonth() + 1).padStart(2, '0');
             const dd = String(selectedCalDate.getDate()).padStart(2, '0');
             hiddenInput.value = `${yyyy}-${mm}-${dd}`;
             displayInput.value = `${dd} / ${mm} / ${yyyy}`;
+        } else if (hiddenInput.value) {
+            const parsed = new Date(hiddenInput.value);
+            if (!isNaN(parsed)) {
+                selectedCalDate = parsed;
+                currentCalDate = parsed;
+            }
         }
 
         // Toggle dropdown
@@ -663,6 +697,7 @@ function initCustomDatePicker() {
             displayInput.value = '';
             picker.classList.remove('open');
             renderCalendar();
+            hiddenInput.dispatchEvent(new Event('change'));
         });
 
         // Today Button
@@ -747,6 +782,8 @@ function initCustomDatePicker() {
             
             picker.classList.remove('open');
             renderCalendar();
+            
+            hiddenInput.dispatchEvent(new Event('change'));
         }
 
         picker.setCustomDate = function(dateStr) {
@@ -762,16 +799,19 @@ function initCustomDatePicker() {
         renderCalendar();
     });
 
-    document.addEventListener('click', (e) => {
-        pickers.forEach(picker => {
-            if (!picker.contains(e.target)) {
-                picker.classList.remove('open');
-            }
+    if (!window.customDatePickerDocListenerAdded) {
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.custom-date-picker').forEach(picker => {
+                if (!picker.contains(e.target)) {
+                    picker.classList.remove('open');
+                }
+            });
         });
-    });
+        window.customDatePickerDocListenerAdded = true;
+    }
 
     window.resetAllCustomDatePickers = function() {
-        pickers.forEach(picker => {
+        document.querySelectorAll('.custom-date-picker').forEach(picker => {
             if (picker.setCustomDate) {
                 const hiddenInput = picker.querySelector('.styled-date-hidden');
                 if (hiddenInput && hiddenInput.id === 'jobDate') {
