@@ -617,6 +617,15 @@ window.editJob = function(id) {
     document.getElementById('jobInterviewNotes').value = job.interviewNotes || '';
 
     if (Array.isArray(job.statusHistory) && job.statusHistory.length > 0) {
+        if (
+            job.statusHistory.length === 1 &&
+            job.date &&
+            job.statusHistory[0].status === job.status &&
+            job.statusHistory[0].date !== job.date
+        ) {
+            job.statusHistory[0].date = job.date;
+            saveToLocalStorage();
+        }
         window.currentEditStatusHistory = JSON.parse(JSON.stringify(job.statusHistory));
     } else {
         window.currentEditStatusHistory = [{ status: job.status, date: job.date || new Date().toISOString() }];

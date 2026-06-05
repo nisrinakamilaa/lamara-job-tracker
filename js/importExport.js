@@ -1,3 +1,38 @@
+function normalizeImportedDate(value) {
+    if (!value) return new Date().toISOString().split('T')[0];
+
+    if (value instanceof Date && !isNaN(value)) {
+        return value.toISOString().split('T')[0];
+    }
+
+    if (typeof value === 'number') {
+        // Excel stores dates as serial numbers starting from 1899-12-30.
+        const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+        const parsed = new Date(excelEpoch.getTime() + value * 86400000);
+        return parsed.toISOString().split('T')[0];
+    }
+
+    const raw = String(value).trim();
+    if (!raw) return new Date().toISOString().split('T')[0];
+
+    const isoMatch = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (isoMatch) {
+        const [, yyyy, mm, dd] = isoMatch;
+        return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+    }
+
+    const slashMatch = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (slashMatch) {
+        const [, dd, mm, yyyy] = slashMatch;
+        return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+    }
+
+    const parsed = new Date(raw);
+    if (!isNaN(parsed)) return parsed.toISOString().split('T')[0];
+
+    return new Date().toISOString().split('T')[0];
+}
+
 window.exportToCSV = function() {
     if (jobs.length === 0) {
         alert("No data to export!");
@@ -103,14 +138,17 @@ window.importFromCSV = function(file) {
             // Map back to object
             if (rawCols.length < 7) continue; // basic validation
             
+            const appliedDate = normalizeImportedDate(rawCols[5]);
+            const importedStatus = rawCols[6] || 'applied';
+
             const newJob = {
                 id: rawCols[0] || Date.now().toString() + i,
                 title: rawCols[1] || '',
                 company: rawCols[2] || '',
                 location: rawCols[3] || '',
                 platform: rawCols[4] || '',
-                date: rawCols[5] || new Date().toISOString().split('T')[0],
-                status: rawCols[6] || 'applied',
+                date: appliedDate,
+                status: importedStatus,
                 priority: rawCols[7] || 'Medium',
                 deadline: rawCols[8] || '',
                 followUp: rawCols[9] || '',
@@ -123,8 +161,8 @@ window.importFromCSV = function(file) {
                 notes: rawCols[16] || '',
                 hasCvFile: false,
                 statusHistory: [{
-                    status: rawCols[6] || 'applied',
-                    date: rawCols[5] || new Date().toISOString()
+                    status: importedStatus,
+                    date: appliedDate
                 }]
             };
             
@@ -176,14 +214,17 @@ window.importFromExcel = function(file) {
                 if (!rawCols || rawCols.length === 0) continue; // skip empty rows
                 
                 // Map back to object
+                const appliedDate = normalizeImportedDate(rawCols[5]);
+                const importedStatus = String(rawCols[6] || 'applied');
+
                 const newJob = {
                     id: String(rawCols[0] || Date.now().toString() + i),
                     title: String(rawCols[1] || ''),
                     company: String(rawCols[2] || ''),
                     location: String(rawCols[3] || ''),
                     platform: String(rawCols[4] || ''),
-                    date: String(rawCols[5] || new Date().toISOString().split('T')[0]),
-                    status: String(rawCols[6] || 'applied'),
+                    date: appliedDate,
+                    status: importedStatus,
                     priority: String(rawCols[7] || 'Medium'),
                     deadline: String(rawCols[8] || ''),
                     followUp: String(rawCols[9] || ''),
@@ -195,7 +236,7 @@ window.importFromExcel = function(file) {
                     reminderNotes: String(rawCols[15] || ''),
                     notes: String(rawCols[16] || ''),
                     hasCvFile: false,
-                    statusHistory: [{status: String(rawCols[6] || 'applied'), date: new Date().toISOString()}]
+                    statusHistory: [{status: importedStatus, date: appliedDate}]
                 };
                 
                 // Check if already exists
