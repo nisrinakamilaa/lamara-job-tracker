@@ -16,9 +16,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- SheetJS for Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="css/main.css?v=28">
-    <link rel="stylesheet" href="css/components.css?v=28">
-    <link rel="stylesheet" href="css/modal.css?v=28">
+    <link rel="stylesheet" href="css/main.css?v=41">
+    <link rel="stylesheet" href="css/components.css?v=41">
+    <link rel="stylesheet" href="css/modal.css?v=41">
 </head>
 <body>
     <script>
@@ -138,7 +138,13 @@
                     </div>
                 </div>
                 <div class="chart-card chart-card-bar">
-                    <h5 class="chart-title">Application Activity</h5>
+                    <div class="chart-header">
+                        <div>
+                            <h5 class="chart-title">Application Activity</h5>
+                            <p id="activityChartMeta" class="chart-meta">Weekly view</p>
+                        </div>
+                        <button id="activityBackBtn" class="chart-back-btn" type="button" style="display: none;">Back to weeks</button>
+                    </div>
                     <div class="chart-canvas-wrap">
                         <div id="activityPlaceholder" class="analytics-placeholder" style="display: none;">No data yet</div>
                         <canvas id="activityChart"></canvas>
@@ -153,13 +159,14 @@
                 <i data-lucide="search"></i>
                 <input type="text" id="searchInput" placeholder="Search by position or company...">
             </div>
+            <button class="btn-sm primary" id="openDrawerBtn" title="Add Job"><i data-lucide="plus"></i><span>Add Job</span></button>
             
             <!-- Toolbar Right Side -->
             <div class="toolbar-right">
                 <div class="toolbar-actions-small">
-                    <input type="file" id="importCsvInput" accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" hidden>
-                    <button class="btn-sm" id="importBtn" title="Import CSV"><i data-lucide="upload"></i><span>Import</span></button>
-                    <button class="btn-sm" id="exportBtn" title="Export CSV"><i data-lucide="download"></i><span>Export</span></button>
+                    <input type="file" id="importCsvInput" accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" hidden>
+                    <button class="btn-sm" id="importBtn" title="Import CSV or Excel" aria-label="Import CSV or Excel"><i data-lucide="upload"></i><span>Import</span></button>
+                    <button class="btn-sm" id="exportBtn" title="Export CSV or Excel" aria-label="Export CSV or Excel"><i data-lucide="download"></i><span>Export</span></button>
                     <button class="btn-sm danger" id="clearDataBtn" title="Clear All Data"><i data-lucide="trash-2"></i><span>Clear All</span></button>
                 </div>
                 
@@ -184,7 +191,19 @@
                         <li data-value="withdrawn">Withdrawn</li>
                     </ul>
                 </div>
-                <button class="btn-sm primary" id="openDrawerBtn" title="Add Job"><i data-lucide="plus"></i><span>Add Job</span></button>
+                <div class="custom-dropdown priority-filter-dropdown" id="priorityFilterDropdown">
+                    <div class="dropdown-header" id="priorityFilterHeader">
+                        <i data-lucide="flag" class="filter-icon"></i>
+                        <span id="priorityFilterSelected">All Priority</span>
+                        <i data-lucide="chevron-down" class="chevron-icon"></i>
+                    </div>
+                    <ul class="dropdown-list" id="priorityFilterList">
+                        <li data-value="all" class="selected">All Priority</li>
+                        <li data-value="High">High</li>
+                        <li data-value="Medium">Medium</li>
+                        <li data-value="Low">Low</li>
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -521,6 +540,30 @@
         </div>
     </template>
 
+    <!-- Import Modal -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal-content" style="max-width: 360px;">
+            <div class="modal-header">
+                <h3>Import Data</h3>
+                <button class="modal-close" id="closeImportModalBtn" aria-label="Close import modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <p class="modal-helper-text">Upload your Lamara data from CSV or Excel. Existing rows with the same details will be updated.</p>
+            <div class="export-options">
+                <button class="export-card" id="chooseImportFileBtn">
+                    <div class="export-icon excel-icon">
+                        <i data-lucide="file-up"></i>
+                    </div>
+                    <div class="export-text">
+                        <h4>Choose file</h4>
+                        <p>Supports .csv, .xlsx, and .xls</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Modal -->
     <div class="modal-overlay" id="exportModal">
         <div class="modal-content" style="max-width: 320px; text-align: center;">
@@ -553,13 +596,13 @@
         </div>
     </div>
 
-    <script src="js/data.js?v=28"></script>
-    <script src="js/utils.js?v=28"></script>
-    <script src="js/dom.js?v=28"></script>
-    <script src="js/state.js?v=28"></script>
-    <script src="js/auth.js?v=28"></script>
-    <script src="js/ui.js?v=28"></script>
-    <script src="js/importExport.js?v=28"></script>
-    <script src="js/app.js?v=28"></script>
+    <script src="js/data.js?v=41"></script>
+    <script src="js/utils.js?v=41"></script>
+    <script src="js/dom.js?v=41"></script>
+    <script src="js/state.js?v=41"></script>
+    <script src="js/auth.js?v=41"></script>
+    <script src="js/ui.js?v=41"></script>
+    <script src="js/importExport.js?v=41"></script>
+    <script src="js/app.js?v=41"></script>
 </body>
 </html>
