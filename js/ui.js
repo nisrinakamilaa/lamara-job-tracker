@@ -182,9 +182,10 @@ function renderList() {
     // Apply Filters & Search
     let filteredJobs = jobs.filter(job => {
         const matchFilter = currentFilter === 'all' || job.status === currentFilter;
+        const matchPriority = currentPriorityFilter === 'all' || (job.priority || 'Medium') === currentPriorityFilter;
         const matchSearch = job.title.toLowerCase().includes(searchQuery) || 
                             job.company.toLowerCase().includes(searchQuery);
-        return matchFilter && matchSearch;
+        return matchFilter && matchPriority && matchSearch;
     }).sort((a, b) => {
         const dateA = new Date(a.date).getTime() || 0;
         const dateB = new Date(b.date).getTime() || 0;
@@ -1201,6 +1202,7 @@ window.updateDashboardCards = function() {
     let interview = 0;
     let offer = 0;
     let attention = 0;
+    let feedback = 0;
     const focusItems = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1209,9 +1211,10 @@ window.updateDashboardCards = function() {
         if (['applied', 'psychotest'].includes(j.status)) inProgress++;
         else if (['interview-hr', 'interview-user', 'mcu'].includes(j.status)) interview++;
         else if (['offering', 'accepted'].includes(j.status)) offer++;
+        if (j.status && j.status !== 'applied' && j.status !== 'ghosted') feedback++;
         const followUpDate = parseValidDate(j.followUp);
         const deadlineDate = parseValidDate(j.deadline);
-        let needsAttention = j.status === 'ghosted';
+        let needsAttention = false;
 
         if (followUpDate) {
             focusItems.push({ job: j, date: followUpDate, type: 'Follow up' });
@@ -1233,12 +1236,14 @@ window.updateDashboardCards = function() {
     dashOffer.textContent = offer;
     if (dashAttention) dashAttention.textContent = attention;
 
-    // Hit Rate = (interview + offer) / total * 100
-    let hitRate = '';
+    const interviewRate = total > 0 ? (((interview + offer) / total) * 100).toFixed(1) : '';
+
+    // Feedback Rate = applications that moved beyond Applied, excluding Ghosted.
+    let feedbackRate = '';
     if (dashHitRate) {
         if (total > 0) {
-            hitRate = (((interview + offer) / total) * 100).toFixed(1);
-            dashHitRate.textContent = `${hitRate}% to interview`;
+            feedbackRate = ((feedback / total) * 100).toFixed(1);
+            dashHitRate.textContent = `${interviewRate}% to interview`;
         } else {
             dashHitRate.textContent = '';
         }
@@ -1246,7 +1251,7 @@ window.updateDashboardCards = function() {
 
     if (dashPulseInsight) {
         dashPulseInsight.textContent = total > 0
-            ? `${inProgress} active | ${hitRate || '0.0'}% to interview`
+            ? `${inProgress} active | ${feedbackRate || '0.0'}% got feedback`
             : 'Start tracking your first application.';
     }
 
@@ -1276,6 +1281,8 @@ window.updateDashboardCards = function() {
 
 let statusChartInstance = null;
 let activityChartInstance = null;
+let activityChartMode = 'weeks';
+let activityChartSelectedWeek = null;
 
 window.renderAnalytics = function(filteredJobs) {
     renderStatusChart(filteredJobs);
@@ -1295,8 +1302,16 @@ function renderStatusChart(filteredJobs) {
         statusCounts[job.status] = (statusCounts[job.status] || 0) + 1;
     });
 
-    // Filter to only statuses that exist, in pipeline order
-    const activeStatuses = statusOrder.filter(s => statusCounts[s] > 0);
+    const statusRank = statusOrder.reduce((acc, status, index) => {
+        acc[status] = index;
+        return acc;
+    }, {});
+    const activeStatuses = statusOrder
+        .filter(s => statusCounts[s] > 0)
+        .sort((a, b) => {
+            const countDiff = statusCounts[b] - statusCounts[a];
+            return countDiff || statusRank[a] - statusRank[b];
+        });
     const totalForPercent = filteredJobs.length;
 
     const labels = activeStatuses.map(k => CONSTANTS.STATUS_MAP[k]?.label || k);
@@ -1398,15 +1413,125 @@ function renderStatusChart(filteredJobs) {
     }
 }
 
+function getActivityDate(job) {
+    const date = parseValidDate(job.date);
+    if (!date) return null;
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
+function getWeekStart(date) {
+    const start = new Date(date);
+    const day = start.getDay();
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+    start.setDate(diff);
+    start.setHours(0, 0, 0, 0);
+    return start;
+}
+
+function getDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function getDateFromKey(key) {
+    const [year, month, day] = key.split('-').map(Number);
+    return new Date(year, month - 1, day);
+}
+
+function formatActivityDay(date) {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatActivityWeek(start) {
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    return `${formatActivityDay(start)} - ${formatActivityDay(end)}`;
+}
+
+function buildWeeklyActivity(filteredJobs) {
+    const datedJobs = filteredJobs
+        .map(job => ({ date: getActivityDate(job) }))
+        .filter(item => item.date);
+
+    if (datedJobs.length === 0) return [];
+
+    const weekCounts = {};
+    datedJobs.forEach(({ date }) => {
+        const weekStart = getWeekStart(date);
+        const key = getDateKey(weekStart);
+        weekCounts[key] = (weekCounts[key] || 0) + 1;
+    });
+
+    const weekKeys = Object.keys(weekCounts).sort();
+    const firstWeek = getDateFromKey(weekKeys[0]);
+    const lastWeek = getDateFromKey(weekKeys[weekKeys.length - 1]);
+    const weeks = [];
+    const cursor = new Date(firstWeek);
+
+    while (cursor <= lastWeek) {
+        const key = getDateKey(cursor);
+        weeks.push({
+            key,
+            label: formatActivityWeek(cursor),
+            count: weekCounts[key] || 0
+        });
+        cursor.setDate(cursor.getDate() + 7);
+    }
+
+    return weeks;
+}
+
+function buildDailyActivity(filteredJobs, weekKey) {
+    const dayCounts = {};
+
+    filteredJobs.forEach(job => {
+        const date = getActivityDate(job);
+        if (!date) return;
+        const weekStart = getWeekStart(date);
+        if (getDateKey(weekStart) !== weekKey) return;
+        const key = getDateKey(date);
+        dayCounts[key] = (dayCounts[key] || 0) + 1;
+    });
+
+    const days = [];
+    const cursor = getDateFromKey(weekKey);
+    for (let i = 0; i < 7; i++) {
+        const key = getDateKey(cursor);
+        days.push({
+            key,
+            label: formatActivityDay(cursor),
+            count: dayCounts[key] || 0
+        });
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return days;
+}
+
 function renderActivityChart(filteredJobs) {
     const canvas = document.getElementById('activityChart');
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     const placeholder = document.getElementById('activityPlaceholder');
+    const meta = document.getElementById('activityChartMeta');
+    const backBtn = document.getElementById('activityBackBtn');
+
+    if (backBtn) {
+        backBtn.onclick = () => {
+            activityChartMode = 'weeks';
+            activityChartSelectedWeek = null;
+            renderActivityChart(filteredJobs);
+        };
+    }
 
     if (filteredJobs.length === 0) {
         if (placeholder) placeholder.style.display = 'block';
+        if (meta) meta.textContent = 'Weekly view';
+        if (backBtn) backBtn.style.display = 'none';
         canvas.style.display = 'none';
         if (activityChartInstance) { activityChartInstance.destroy(); activityChartInstance = null; }
         return;
@@ -1475,6 +1600,36 @@ function renderActivityChart(filteredJobs) {
         data = sortedKeys.map(k => weekBuckets[k]);
     }
 
+    let activityBuckets = buildWeeklyActivity(filteredJobs);
+    if (activityBuckets.length === 0) {
+        if (placeholder) placeholder.style.display = 'block';
+        if (meta) meta.textContent = 'Weekly view';
+        if (backBtn) backBtn.style.display = 'none';
+        canvas.style.display = 'none';
+        if (activityChartInstance) { activityChartInstance.destroy(); activityChartInstance = null; }
+        return;
+    }
+
+    if (activityChartMode === 'days') {
+        const hasSelectedWeek = activityBuckets.some(bucket => bucket.key === activityChartSelectedWeek);
+        if (!activityChartSelectedWeek || !hasSelectedWeek) {
+            activityChartMode = 'weeks';
+            activityChartSelectedWeek = null;
+        }
+    }
+
+    if (activityChartMode === 'days') {
+        activityBuckets = buildDailyActivity(filteredJobs, activityChartSelectedWeek);
+        if (meta) meta.textContent = formatActivityWeek(getDateFromKey(activityChartSelectedWeek));
+        if (backBtn) backBtn.style.display = 'inline-flex';
+    } else {
+        if (meta) meta.textContent = 'Weekly view - click a bar to see days';
+        if (backBtn) backBtn.style.display = 'none';
+    }
+
+    labels = activityBuckets.map(bucket => bucket.label);
+    data = activityBuckets.map(bucket => bucket.count);
+
     if (activityChartInstance) { activityChartInstance.destroy(); }
 
     if (typeof Chart !== 'undefined') {
@@ -1519,11 +1674,25 @@ function renderActivityChart(filteredJobs) {
                         cornerRadius: 8,
                         padding: 10,
                         callbacks: {
+                            title: function(context) {
+                                return context[0]?.label || '';
+                            },
                             label: function(context) {
                                 return `${context.parsed.y} application${context.parsed.y > 1 ? 's' : ''}`;
                             }
                         }
                     }
+                },
+                onClick: function(event, elements) {
+                    if (activityChartMode !== 'weeks' || elements.length === 0) return;
+                    const bucket = activityBuckets[elements[0].index];
+                    if (!bucket || bucket.count === 0) return;
+                    activityChartMode = 'days';
+                    activityChartSelectedWeek = bucket.key;
+                    renderActivityChart(filteredJobs);
+                },
+                onHover: function(event, elements) {
+                    canvas.style.cursor = activityChartMode === 'weeks' && elements.length > 0 ? 'pointer' : 'default';
                 },
                 scales: {
                     x: {

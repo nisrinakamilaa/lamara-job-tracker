@@ -8,6 +8,7 @@ let jobs = loadFromLocalStorage();
 let currentEditJobId = null;
 let removeCvFile = false;
 let currentFilter = 'all';
+let currentPriorityFilter = 'all';
 let searchQuery = '';
 let currentPage = 1;
 const rowsPerPage = 20;
