@@ -114,12 +114,23 @@ function setupEventListeners() {
     // Custom Dropdown Logic
     dropdownHeader.addEventListener('click', () => {
         statusDropdown.classList.toggle('open');
+        if (priorityFilterDropdown) priorityFilterDropdown.classList.remove('open');
     });
+
+    if (priorityFilterHeader) {
+        priorityFilterHeader.addEventListener('click', () => {
+            priorityFilterDropdown.classList.toggle('open');
+            statusDropdown.classList.remove('open');
+        });
+    }
 
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!statusDropdown.contains(e.target)) {
             statusDropdown.classList.remove('open');
+        }
+        if (priorityFilterDropdown && !priorityFilterDropdown.contains(e.target)) {
+            priorityFilterDropdown.classList.remove('open');
         }
     });
 
@@ -136,6 +147,20 @@ function setupEventListeners() {
             // Apply filter
             currentFilter = e.target.dataset.value;
             statusDropdown.classList.remove('open');
+            currentPage = 1;
+            renderList();
+        });
+    });
+
+    priorityFilterItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            priorityFilterItems.forEach(li => li.classList.remove('selected'));
+            e.target.classList.add('selected');
+
+            if (priorityFilterSelected) priorityFilterSelected.textContent = e.target.textContent;
+
+            currentPriorityFilter = e.target.dataset.value;
+            priorityFilterDropdown.classList.remove('open');
             currentPage = 1;
             renderList();
         });
@@ -215,7 +240,7 @@ function setupEventListeners() {
         });
     });
 
-    // CSV Listeners
+    // Import/export listeners
     const exportBtn = document.getElementById('exportBtn');
     const exportModal = document.getElementById('exportModal');
     if (exportBtn && exportModal) {
@@ -241,13 +266,42 @@ function setupEventListeners() {
     }
 
     const importBtn = document.getElementById('importBtn');
+    const importModal = document.getElementById('importModal');
+    const closeImportModalBtn = document.getElementById('closeImportModalBtn');
+    const chooseImportFileBtn = document.getElementById('chooseImportFileBtn');
     const importCsvInput = document.getElementById('importCsvInput');
-    if (importBtn && importCsvInput) {
-        importBtn.addEventListener('click', () => importCsvInput.click());
+
+    if (importBtn && importModal) {
+        importBtn.addEventListener('click', () => {
+            importModal.classList.add('active');
+        });
+    }
+
+    if (closeImportModalBtn && importModal) {
+        closeImportModalBtn.addEventListener('click', () => {
+            importModal.classList.remove('active');
+        });
+    }
+
+    if (importModal) {
+        importModal.addEventListener('click', (e) => {
+            if (e.target === importModal) {
+                importModal.classList.remove('active');
+            }
+        });
+    }
+
+    if (chooseImportFileBtn && importCsvInput) {
+        chooseImportFileBtn.addEventListener('click', () => importCsvInput.click());
+    }
+
+    if (importCsvInput) {
         importCsvInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 const file = e.target.files[0];
-                if (file.name.endsWith('.xlsx')) {
+                const fileName = file.name.toLowerCase();
+                if (importModal) importModal.classList.remove('active');
+                if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
                     if (window.importFromExcel) window.importFromExcel(file);
                 } else {
                     if (window.importFromCSV) window.importFromCSV(file);
