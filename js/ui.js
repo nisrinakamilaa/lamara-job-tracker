@@ -57,10 +57,6 @@ function closeDrawer() {
     const jobPriorityInput = document.getElementById('jobPriority');
     if (jobPriorityInput) jobPriorityInput.value = 'Medium';
 
-    if (window.updateVisualPipeline) {
-        window.updateVisualPipeline('applied');
-    }
-
     if (window.resetAllCustomDatePickers) {
         window.resetAllCustomDatePickers();
     }
@@ -68,6 +64,10 @@ function closeDrawer() {
     const timelineContainer = document.getElementById('statusHistoryTimeline');
     if (timelineContainer) timelineContainer.innerHTML = '';
     window.currentEditStatusHistory = [];
+
+    if (window.updateVisualPipeline) {
+        window.updateVisualPipeline('applied');
+    }
 }
 
 // Form Submission
@@ -444,6 +444,11 @@ function renderStatusHistory() {
     
     // Re-initialize any new custom date pickers added
     initCustomDatePicker();
+
+    const currentStatus = document.getElementById('jobStatus');
+    if (window.updateVisualPipeline && currentStatus) {
+        window.updateVisualPipeline(currentStatus.value);
+    }
 }
 
 window.removeStatusHistory = function(index) {
@@ -1727,35 +1732,69 @@ function renderActivityChart(filteredJobs) {
 }
 
 window.updateVisualPipeline = function(status) {
-    const pipelineSteps = document.querySelectorAll('.pipeline-step');
-    const pipelineLines = document.querySelectorAll('.pipeline-line');
-    
-    const stepSequence = ['applied', 'psychotest', 'interview-hr', 'interview-user', 'mcu', 'offering'];
-    const currentIndex = stepSequence.indexOf(status);
-    
-    pipelineSteps.forEach((step, index) => {
-        const stepName = step.dataset.step;
-        const stepIndex = stepSequence.indexOf(stepName);
-        
-        step.classList.remove('active', 'completed');
-        
-        if (currentIndex === -1) {
-             if (status === 'accepted') step.classList.add('completed');
-        } else {
-            if (stepIndex < currentIndex) {
-                step.classList.add('completed');
-            } else if (stepIndex === currentIndex) {
-                step.classList.add('active');
-            }
+    const pipeline = document.querySelector('.visual-pipeline');
+    if (!pipeline) return;
+
+    const defaultSteps = [
+        { status: 'applied', label: 'Applied' },
+        { status: 'psychotest', label: 'Test' },
+        { status: 'interview-hr', label: 'HR Int.' },
+        { status: 'interview-user', label: 'User Int.' },
+        { status: 'mcu', label: 'MCU' },
+        { status: 'offering', label: 'Offer' }
+    ];
+    const pipelineStatuses = new Set(defaultSteps.map(step => step.status));
+    const history = Array.isArray(window.currentEditStatusHistory)
+        ? [...window.currentEditStatusHistory].sort((a, b) => new Date(a.date) - new Date(b.date))
+        : [];
+
+    const actualSequence = [];
+    history.forEach(item => {
+        if (pipelineStatuses.has(item.status) && !actualSequence.includes(item.status)) {
+            actualSequence.push(item.status);
         }
     });
 
-    pipelineLines.forEach((line, index) => {
-        line.classList.remove('completed');
-        if (currentIndex === -1 && status === 'accepted') {
-             line.classList.add('completed');
-        } else if (currentIndex > -1 && index < currentIndex) {
-            line.classList.add('completed');
+    // Show the selected status immediately, even before the job is saved.
+    if (pipelineStatuses.has(status) && !actualSequence.includes(status)) {
+        actualSequence.push(status);
+    }
+
+    const orderedStatuses = [
+        ...actualSequence,
+        ...defaultSteps.map(step => step.status).filter(stepStatus => !actualSequence.includes(stepStatus))
+    ];
+    const labels = Object.fromEntries(defaultSteps.map(step => [step.status, step.label]));
+    const currentIndex = orderedStatuses.indexOf(status);
+    const isAccepted = status === 'accepted';
+    const completedHistoryCount = actualSequence.length;
+
+    pipeline.innerHTML = orderedStatuses.map((stepStatus, index) => {
+        let stateClass = '';
+        if (isAccepted) {
+            stateClass = 'completed';
+        } else if (currentIndex > -1) {
+            if (index < currentIndex) stateClass = 'completed';
+            if (index === currentIndex) stateClass = 'active';
+        } else if (index < completedHistoryCount) {
+            stateClass = 'completed';
         }
-    });
+
+        const lineCompleted = isAccepted
+            || (currentIndex > -1 ? index < currentIndex : index < completedHistoryCount - 1);
+        const line = index < orderedStatuses.length - 1
+            ? `<div class="pipeline-line${lineCompleted ? ' completed' : ''}"></div>`
+            : '';
+
+        return `
+            <div class="pipeline-step ${stateClass}" data-step="${stepStatus}">
+                <div class="step-dot"></div><span class="step-label">${labels[stepStatus]}</span>
+            </div>
+            ${line}
+        `;
+    }).join('');
+
+    pipeline.classList.remove('pipeline-updated');
+    void pipeline.offsetWidth;
+    pipeline.classList.add('pipeline-updated');
 };

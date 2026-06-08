@@ -124,6 +124,66 @@ function setupEventListeners() {
         });
     }
 
+    const activeFilters = document.getElementById('activeFilters');
+
+    function setStatusFilter(value) {
+        const selectedItem = Array.from(dropdownItems).find(item => item.dataset.value === value);
+        dropdownItems.forEach(li => li.classList.remove('selected'));
+        if (selectedItem) {
+            selectedItem.classList.add('selected');
+            dropdownSelected.textContent = selectedItem.textContent;
+        }
+        currentFilter = value;
+    }
+
+    function setPriorityFilter(value) {
+        const selectedItem = Array.from(priorityFilterItems).find(item => item.dataset.value === value);
+        priorityFilterItems.forEach(li => li.classList.remove('selected'));
+        if (selectedItem && priorityFilterSelected) {
+            selectedItem.classList.add('selected');
+            priorityFilterSelected.textContent = selectedItem.textContent;
+        }
+        currentPriorityFilter = value;
+    }
+
+    function renderActiveFilters() {
+        if (!activeFilters) return;
+
+        const chips = [];
+        if (currentFilter !== 'all') {
+            chips.push(`<button class="filter-chip" type="button" data-clear-filter="status">${dropdownSelected.textContent}<i data-lucide="x"></i></button>`);
+        }
+        if (currentPriorityFilter !== 'all' && priorityFilterSelected) {
+            chips.push(`<button class="filter-chip" type="button" data-clear-filter="priority">${priorityFilterSelected.textContent}<i data-lucide="x"></i></button>`);
+        }
+
+        activeFilters.hidden = chips.length === 0;
+        activeFilters.innerHTML = chips.length
+            ? `<span class="active-filter-label">Active filters</span>${chips.join('')}<button class="clear-filters-btn" type="button" data-clear-filter="all">Clear filters</button>`
+            : '';
+
+        lucide.createIcons();
+    }
+
+    if (activeFilters) {
+        activeFilters.addEventListener('click', (e) => {
+            const button = e.target.closest('button[data-clear-filter]');
+            if (!button) return;
+
+            const filterType = button.dataset.clearFilter;
+            if (filterType === 'status' || filterType === 'all') {
+                setStatusFilter('all');
+            }
+            if (filterType === 'priority' || filterType === 'all') {
+                setPriorityFilter('all');
+            }
+
+            currentPage = 1;
+            renderList();
+            renderActiveFilters();
+        });
+    }
+
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!statusDropdown.contains(e.target)) {
@@ -137,34 +197,26 @@ function setupEventListeners() {
     // Handle dropdown selection
     dropdownItems.forEach(item => {
         item.addEventListener('click', (e) => {
-            // Update active state
-            dropdownItems.forEach(li => li.classList.remove('selected'));
-            e.target.classList.add('selected');
-            
-            // Update text
-            dropdownSelected.textContent = e.target.textContent;
-            
             // Apply filter
-            currentFilter = e.target.dataset.value;
+            setStatusFilter(e.target.dataset.value);
             statusDropdown.classList.remove('open');
             currentPage = 1;
             renderList();
+            renderActiveFilters();
         });
     });
 
     priorityFilterItems.forEach(item => {
         item.addEventListener('click', (e) => {
-            priorityFilterItems.forEach(li => li.classList.remove('selected'));
-            e.target.classList.add('selected');
-
-            if (priorityFilterSelected) priorityFilterSelected.textContent = e.target.textContent;
-
-            currentPriorityFilter = e.target.dataset.value;
+            setPriorityFilter(e.target.dataset.value);
             priorityFilterDropdown.classList.remove('open');
             currentPage = 1;
             renderList();
+            renderActiveFilters();
         });
     });
+
+    renderActiveFilters();
 
     // Search
     searchInput.addEventListener('input', (e) => {

@@ -617,11 +617,14 @@ body.dark-theme .btn-theme-toggle .moon-icon {
 /* Custom Dropdown Styling */
 .custom-dropdown {
     position: relative;
+    width: 165px;
     min-width: 165px;
     font-family: var(--font-body);
+    flex: 0 0 165px;
 }
 
 .priority-filter-dropdown {
+    width: 165px;
     min-width: 165px;
 }
 
@@ -629,7 +632,8 @@ body.dark-theme .btn-theme-toggle .moon-icon {
     display: flex;
     align-items: center;
     background: var(--bg-main);
-    padding: 0 16px;
+    gap: 8px;
+    padding: 0 14px;
     height: 38px;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -646,7 +650,8 @@ body.dark-theme .btn-theme-toggle .moon-icon {
     width: 16px;
     height: 16px;
     color: var(--primary);
-    margin-right: 8px;
+    margin-right: 0;
+    flex: 0 0 16px;
 }
 
 .chevron-icon {
@@ -665,6 +670,61 @@ body.dark-theme .btn-theme-toggle .moon-icon {
     font-size: 14px;
     font-weight: 500;
     color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.active-filters {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    margin-top: 2px;
+    color: var(--text-light);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.active-filters[hidden] {
+    display: none;
+}
+
+.active-filter-label {
+    color: var(--text-muted);
+}
+
+.filter-chip,
+.clear-filters-btn {
+    border: 1px solid var(--border-color);
+    background: var(--bg-main);
+    color: var(--text-muted);
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.filter-chip:hover,
+.clear-filters-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary-dark);
+    background: var(--primary-light);
+}
+
+.filter-chip i,
+.clear-filters-btn i {
+    width: 13px;
+    height: 13px;
 }
 
 .dropdown-list {
@@ -1694,6 +1754,29 @@ body.dark-theme .card-attention .dash-icon {
     margin-top: 16px;
     padding: 12px 0;
     overflow-x: auto;
+}
+
+.visual-pipeline.pipeline-updated .pipeline-step,
+.visual-pipeline.pipeline-updated .pipeline-line {
+    animation: pipeline-refresh 180ms ease-out;
+}
+
+@keyframes pipeline-refresh {
+    from {
+        opacity: 0.45;
+        transform: translateY(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .visual-pipeline.pipeline-updated .pipeline-step,
+    .visual-pipeline.pipeline-updated .pipeline-line {
+        animation: none;
+    }
 }
 
 .pipeline-step {
