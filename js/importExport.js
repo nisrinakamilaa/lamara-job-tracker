@@ -33,6 +33,44 @@ function normalizeImportedDate(value) {
     return new Date().toISOString().split('T')[0];
 }
 
+function escapeCSVCell(value) {
+    const text = String(value ?? '');
+    return `"${text.replace(/"/g, '""')}"`;
+}
+
+function serializeStatusHistory(history) {
+    return JSON.stringify(Array.isArray(history) ? history : []);
+}
+
+function parseImportedStatusHistory(value, fallbackStatus, fallbackDate) {
+    const normalizedFallbackDate = normalizeImportedDate(fallbackDate);
+    const fallbackHistory = fallbackStatus && fallbackStatus !== 'applied'
+        ? [
+            { status: 'applied', date: normalizedFallbackDate },
+            { status: fallbackStatus, date: normalizedFallbackDate }
+        ]
+        : [{ status: fallbackStatus || 'applied', date: normalizedFallbackDate }];
+
+    if (!value) return fallbackHistory;
+
+    try {
+        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+        if (!Array.isArray(parsed) || parsed.length === 0) return fallbackHistory;
+
+        const cleaned = parsed
+            .filter(item => item && item.status)
+            .map(item => ({
+                status: String(item.status),
+                date: normalizeImportedDate(item.date || normalizedFallbackDate)
+            }));
+
+        return cleaned.length > 0 ? cleaned : fallbackHistory;
+    } catch (err) {
+        console.warn('Failed to parse imported status history:', err);
+        return fallbackHistory;
+    }
+}
+
 window.exportToCSV = function() {
     if (jobs.length === 0) {
         alert("No data to export!");
@@ -41,27 +79,28 @@ window.exportToCSV = function() {
     const headers = [
         "ID", "Title", "Company", "Location", "Platform", "Date Applied", 
         "Status", "Priority", "Deadline", "Follow Up", "Salary", "URL", 
-        "Desc Summary", "CV Version", "Interview Notes", "Reminder Notes", "General Notes"
+        "Desc Summary", "CV Version", "Interview Notes", "Reminder Notes", "General Notes", "Status History"
     ];
     
     const rows = jobs.map(job => [
         job.id, 
-        `"${(job.title || '').replace(/"/g, '""')}"`, 
-        `"${(job.company || '').replace(/"/g, '""')}"`, 
-        `"${(job.location || '').replace(/"/g, '""')}"`,
-        `"${(job.platform || '').replace(/"/g, '""')}"`,
+        escapeCSVCell(job.title || ''), 
+        escapeCSVCell(job.company || ''), 
+        escapeCSVCell(job.location || ''),
+        escapeCSVCell(job.platform || ''),
         job.date,
         job.status,
         job.priority || 'Medium',
         job.deadline || '',
         job.followUp || '',
-        `"${(job.salary || '').replace(/"/g, '""')}"`,
+        escapeCSVCell(job.salary || ''),
         job.url || '',
-        `"${(job.descSummary || '').replace(/"/g, '""')}"`,
-        `"${(job.cvVersion || '').replace(/"/g, '""')}"`,
-        `"${(job.interviewNotes || '').replace(/"/g, '""')}"`,
-        `"${(job.reminderNotes || '').replace(/"/g, '""')}"`,
-        `"${(job.notes || '').replace(/"/g, '""')}"`
+        escapeCSVCell(job.descSummary || ''),
+        escapeCSVCell(job.cvVersion || ''),
+        escapeCSVCell(job.interviewNotes || ''),
+        escapeCSVCell(job.reminderNotes || ''),
+        escapeCSVCell(job.notes || ''),
+        escapeCSVCell(serializeStatusHistory(job.statusHistory))
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -85,7 +124,7 @@ window.exportToExcel = function() {
     const headers = [
         "ID", "Title", "Company", "Location", "Platform", "Date Applied", 
         "Status", "Priority", "Deadline", "Follow Up", "Salary", "URL", 
-        "Desc Summary", "CV Version", "Interview Notes", "Reminder Notes", "General Notes"
+        "Desc Summary", "CV Version", "Interview Notes", "Reminder Notes", "General Notes", "Status History"
     ];
     
     const rows = jobs.map(job => [
@@ -105,7 +144,8 @@ window.exportToExcel = function() {
         job.cvVersion || '',
         job.interviewNotes || '',
         job.reminderNotes || '',
-        job.notes || ''
+        job.notes || '',
+        serializeStatusHistory(job.statusHistory)
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -140,6 +180,7 @@ window.importFromCSV = function(file) {
             
             const appliedDate = normalizeImportedDate(rawCols[5]);
             const importedStatus = rawCols[6] || 'applied';
+            const statusHistory = parseImportedStatusHistory(rawCols[17], importedStatus, appliedDate);
 
             const newJob = {
                 id: rawCols[0] || Date.now().toString() + i,
@@ -160,17 +201,16 @@ window.importFromCSV = function(file) {
                 reminderNotes: rawCols[15] || '',
                 notes: rawCols[16] || '',
                 hasCvFile: false,
-                statusHistory: [{
-                    status: importedStatus,
-                    date: appliedDate
-                }]
+                statusHistory
             };
             
-            // Avoid duplicate IDs
-            if (!jobs.find(j => j.id === newJob.id)) {
+            const existingIndex = jobs.findIndex(j => j.id === newJob.id);
+            if (existingIndex >= 0) {
+                jobs[existingIndex] = newJob;
+            } else {
                 jobs.push(newJob);
-                importedCount++;
             }
+            importedCount++;
         }
         
         if (importedCount > 0) {
@@ -216,6 +256,7 @@ window.importFromExcel = function(file) {
                 // Map back to object
                 const appliedDate = normalizeImportedDate(rawCols[5]);
                 const importedStatus = String(rawCols[6] || 'applied');
+                const statusHistory = parseImportedStatusHistory(rawCols[17], importedStatus, appliedDate);
 
                 const newJob = {
                     id: String(rawCols[0] || Date.now().toString() + i),
@@ -236,7 +277,7 @@ window.importFromExcel = function(file) {
                     reminderNotes: String(rawCols[15] || ''),
                     notes: String(rawCols[16] || ''),
                     hasCvFile: false,
-                    statusHistory: [{status: importedStatus, date: appliedDate}]
+                    statusHistory
                 };
                 
                 // Check if already exists
