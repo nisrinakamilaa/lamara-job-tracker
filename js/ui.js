@@ -528,7 +528,7 @@ function renderStatusHistory() {
                 <span class="timeline-status">${mappedLabelText}</span>
                 <div class="custom-date-picker timeline-custom-date" style="position: relative;">
                     <div class="date-input-wrapper timeline-date-wrapper" style="border: none; background: transparent; padding: 0; min-height: auto; width: fit-content; gap: 4px;" title="Click to edit date" onclick="this.querySelector('.styled-date-display').click()">
-                        <input type="text" class="styled-date-display timeline-date-text" readonly style="border: none; background: transparent; padding: 0; font-size: 11px; color: var(--text-muted); cursor: pointer; width: 75px; text-overflow: ellipsis; white-space: nowrap;" value="${displayDate}">
+                        <input type="text" class="styled-date-display timeline-date-text" readonly style="border: none; background: transparent; padding: 0; font-size: 11px; color: var(--text-muted); cursor: pointer; width: 96px; white-space: nowrap;" value="${displayDate}">
                         <input type="hidden" class="styled-date-hidden" value="${formattedDateValue}" onchange="window.updateStatusHistoryDate(${index}, this.value)">
                         <i data-lucide="pencil" class="calendar-icon edit-date-icon" style="width: 11px; height: 11px; opacity: 0.6; position: static; transform: none; color: var(--text-muted); margin: 0; pointer-events: none;"></i>
                     </div>
