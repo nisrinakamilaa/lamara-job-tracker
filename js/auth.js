@@ -18,6 +18,10 @@ function toDbJob(job) {
         salary: job.salary || '',
         interview_notes: job.interviewNotes || '',
         notes: job.notes || '',
+        outreach_status: job.outreachStatus || 'not-contacted',
+        outreach_person: job.outreachPerson || '',
+        outreach_date: job.outreachDate || null,
+        outreach_url: job.outreachUrl || '',
         status_history: job.statusHistory || [],
         has_cv_file: !!job.hasCvFile
     };
@@ -42,6 +46,10 @@ function fromDbJob(row) {
         salary: row.salary || '',
         interviewNotes: row.interview_notes || '',
         notes: row.notes || '',
+        outreachStatus: row.outreach_status || 'not-contacted',
+        outreachPerson: row.outreach_person || '',
+        outreachDate: row.outreach_date || '',
+        outreachUrl: row.outreach_url || '',
         statusHistory: row.status_history || [],
         hasCvFile: !!row.has_cv_file
     };

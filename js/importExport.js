@@ -79,7 +79,8 @@ window.exportToCSV = function() {
     const headers = [
         "ID", "Title", "Company", "Location", "Platform", "Date Applied", 
         "Status", "Priority", "Deadline", "Follow Up", "Salary", "URL", 
-        "Desc Summary", "CV Version", "Interview Notes", "Reminder Notes", "General Notes", "Status History"
+        "Desc Summary", "CV Version", "Interview Notes", "Reminder Notes", "General Notes", "Status History",
+        "Outreach Status", "Outreach Person", "Outreach Date", "Outreach URL"
     ];
     
     const rows = jobs.map(job => [
@@ -100,7 +101,11 @@ window.exportToCSV = function() {
         escapeCSVCell(job.interviewNotes || ''),
         escapeCSVCell(job.reminderNotes || ''),
         escapeCSVCell(job.notes || ''),
-        escapeCSVCell(serializeStatusHistory(job.statusHistory))
+        escapeCSVCell(serializeStatusHistory(job.statusHistory)),
+        job.outreachStatus || 'not-contacted',
+        escapeCSVCell(job.outreachPerson || ''),
+        job.outreachDate || '',
+        job.outreachUrl || ''
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -124,7 +129,8 @@ window.exportToExcel = function() {
     const headers = [
         "ID", "Title", "Company", "Location", "Platform", "Date Applied", 
         "Status", "Priority", "Deadline", "Follow Up", "Salary", "URL", 
-        "Desc Summary", "CV Version", "Interview Notes", "Reminder Notes", "General Notes", "Status History"
+        "Desc Summary", "CV Version", "Interview Notes", "Reminder Notes", "General Notes", "Status History",
+        "Outreach Status", "Outreach Person", "Outreach Date", "Outreach URL"
     ];
     
     const rows = jobs.map(job => [
@@ -145,7 +151,11 @@ window.exportToExcel = function() {
         job.interviewNotes || '',
         job.reminderNotes || '',
         job.notes || '',
-        serializeStatusHistory(job.statusHistory)
+        serializeStatusHistory(job.statusHistory),
+        job.outreachStatus || 'not-contacted',
+        job.outreachPerson || '',
+        job.outreachDate || '',
+        job.outreachUrl || ''
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -200,6 +210,10 @@ window.importFromCSV = function(file) {
                 interviewNotes: rawCols[14] || '',
                 reminderNotes: rawCols[15] || '',
                 notes: rawCols[16] || '',
+                outreachStatus: rawCols[18] || 'not-contacted',
+                outreachPerson: rawCols[19] || '',
+                outreachDate: rawCols[20] ? normalizeImportedDate(rawCols[20]) : '',
+                outreachUrl: rawCols[21] || '',
                 hasCvFile: false,
                 statusHistory
             };
@@ -276,6 +290,10 @@ window.importFromExcel = function(file) {
                     interviewNotes: String(rawCols[14] || ''),
                     reminderNotes: String(rawCols[15] || ''),
                     notes: String(rawCols[16] || ''),
+                    outreachStatus: String(rawCols[18] || 'not-contacted'),
+                    outreachPerson: String(rawCols[19] || ''),
+                    outreachDate: rawCols[20] ? normalizeImportedDate(rawCols[20]) : '',
+                    outreachUrl: String(rawCols[21] || ''),
                     hasCvFile: false,
                     statusHistory
                 };

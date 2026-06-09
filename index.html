@@ -16,9 +16,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- SheetJS for Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="css/main.css?v=44">
-    <link rel="stylesheet" href="css/components.css?v=44">
-    <link rel="stylesheet" href="css/modal.css?v=44">
+    <link rel="stylesheet" href="css/main.css?v=49">
+    <link rel="stylesheet" href="css/components.css?v=49">
+    <link rel="stylesheet" href="css/modal.css?v=49">
 </head>
 <body>
     <script>
@@ -359,7 +359,71 @@
                     </div>
                 </div>
 
-                <!-- SECTION 3: Deadlines & Reminders -->
+                <!-- SECTION 3: Outreach -->
+                <div class="drawer-section">
+                    <h4 class="section-title">Outreach</h4>
+                    <div class="outreach-status-control" id="outreachStatusControl">
+                        <button type="button" class="outreach-option selected" data-value="not-contacted">Not contacted</button>
+                        <button type="button" class="outreach-option" data-value="contacted">Contacted</button>
+                        <button type="button" class="outreach-option" data-value="replied">Replied</button>
+                    </div>
+                    <input type="hidden" id="jobOutreachStatus" value="not-contacted">
+
+                    <div class="form-row outreach-fields">
+                        <div class="form-group">
+                            <label>Contacted person</label>
+                            <div class="custom-dropdown form-custom-dropdown" id="outreachPersonDropdown">
+                                <div class="dropdown-header" id="outreachPersonDropdownHeader">
+                                    <span id="outreachPersonDropdownSelected">Select person</span>
+                                    <i data-lucide="chevron-down" class="chevron-icon"></i>
+                                </div>
+                                <ul class="dropdown-list" id="outreachPersonDropdownList">
+                                    <li data-value="" class="selected">Select person</li>
+                                    <li data-value="Recruiter/HR">Recruiter/HR</li>
+                                    <li data-value="Hiring Manager">Hiring Manager</li>
+                                    <li data-value="Employee">Employee</li>
+                                    <li data-value="Other">Other</li>
+                                </ul>
+                                <input type="hidden" id="jobOutreachPerson" value="">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Contact date</label>
+                            <div class="custom-date-picker">
+                                <div class="date-input-wrapper">
+                                    <input type="text" class="styled-date-display" readonly placeholder="DD / MM / YYYY">
+                                    <input type="hidden" id="jobOutreachDate" class="styled-date-hidden">
+                                    <i data-lucide="calendar" class="calendar-icon"></i>
+                                </div>
+                                <div class="calendar-dropdown">
+                                    <div class="calendar-header">
+                                        <button type="button" class="calPrevBtn"><i data-lucide="chevron-left"></i></button>
+                                        <span class="cal-month-year calMonthYear"></span>
+                                        <button type="button" class="calNextBtn"><i data-lucide="chevron-right"></i></button>
+                                    </div>
+                                    <div class="calendar-weekdays">
+                                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                    </div>
+                                    <div class="calendar-days calDays"></div>
+                                    <div class="calendar-footer">
+                                        <button type="button" class="cal-btn-clear calClearBtn">Clear</button>
+                                        <button type="button" class="cal-btn-today calTodayBtn">Today</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>LinkedIn / Profile URL</label>
+                        <div class="input-with-icon">
+                            <i data-lucide="user-search"></i>
+                            <input type="url" id="jobOutreachUrl" placeholder="Paste the contact profile link...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 4: Deadlines & Reminders -->
                 <div class="drawer-section">
                     <h4 class="section-title">Timeline & Reminders</h4>
                     
@@ -448,7 +512,7 @@
                     </div>
                 </div>
 
-                <!-- SECTION 4: Structured Notes -->
+                <!-- SECTION 5: Structured Notes -->
                 <div class="drawer-section">
                     <h4 class="section-title">Structured Notes</h4>
                     
@@ -597,13 +661,13 @@
         </div>
     </div>
 
-    <script src="js/data.js?v=44"></script>
-    <script src="js/utils.js?v=44"></script>
-    <script src="js/dom.js?v=44"></script>
-    <script src="js/state.js?v=44"></script>
-    <script src="js/auth.js?v=44"></script>
-    <script src="js/ui.js?v=44"></script>
-    <script src="js/importExport.js?v=44"></script>
-    <script src="js/app.js?v=44"></script>
+    <script src="js/data.js?v=49"></script>
+    <script src="js/utils.js?v=49"></script>
+    <script src="js/dom.js?v=49"></script>
+    <script src="js/state.js?v=49"></script>
+    <script src="js/auth.js?v=49"></script>
+    <script src="js/ui.js?v=49"></script>
+    <script src="js/importExport.js?v=49"></script>
+    <script src="js/app.js?v=49"></script>
 </body>
 </html>

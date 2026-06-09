@@ -292,6 +292,55 @@ function setupEventListeners() {
         });
     });
 
+    const outreachPersonDropdown = document.getElementById('outreachPersonDropdown');
+    const outreachPersonDropdownHeader = document.getElementById('outreachPersonDropdownHeader');
+    const outreachPersonDropdownList = document.getElementById('outreachPersonDropdownList');
+    const outreachPersonDropdownSelected = document.getElementById('outreachPersonDropdownSelected');
+    const outreachPersonItems = outreachPersonDropdownList ? outreachPersonDropdownList.querySelectorAll('li') : [];
+    const outreachPersonInput = document.getElementById('jobOutreachPerson');
+
+    if (outreachPersonDropdownHeader) {
+        outreachPersonDropdownHeader.addEventListener('click', () => {
+            outreachPersonDropdown.classList.toggle('open');
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (outreachPersonDropdown && !outreachPersonDropdown.contains(e.target)) {
+            outreachPersonDropdown.classList.remove('open');
+        }
+    });
+
+    outreachPersonItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            outreachPersonItems.forEach(li => li.classList.remove('selected'));
+            e.target.classList.add('selected');
+            if (outreachPersonDropdownSelected) outreachPersonDropdownSelected.textContent = e.target.textContent;
+            if (outreachPersonInput) outreachPersonInput.value = e.target.dataset.value;
+            outreachPersonDropdown.classList.remove('open');
+        });
+    });
+
+    const outreachStatusInput = document.getElementById('jobOutreachStatus');
+    const outreachDateInput = document.getElementById('jobOutreachDate');
+    document.querySelectorAll('.outreach-option').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.outreach-option').forEach(option => option.classList.remove('selected'));
+            button.classList.add('selected');
+            if (outreachStatusInput) outreachStatusInput.value = button.dataset.value;
+
+            if (
+                outreachDateInput
+                && button.dataset.value !== 'not-contacted'
+                && !outreachDateInput.value
+            ) {
+                const picker = outreachDateInput.closest('.custom-date-picker');
+                const today = new Date().toISOString().split('T')[0];
+                if (picker && picker.setCustomDate) picker.setCustomDate(today);
+            }
+        });
+    });
+
     // Import/export listeners
     const exportBtn = document.getElementById('exportBtn');
     const exportModal = document.getElementById('exportModal');

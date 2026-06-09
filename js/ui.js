@@ -25,14 +25,43 @@ window.downloadCv = async function(jobId) {
     }
 };
 
+let pageScrollBeforeDrawer = 0;
+
+function resetDrawerScroll() {
+    const drawerContent = sideDrawer ? sideDrawer.querySelector('.drawer-content') : null;
+    if (drawerContent) drawerContent.scrollTop = 0;
+}
+
+function restorePageScroll(scrollPosition) {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+            window.scrollTo({ top: Math.min(scrollPosition, maxScroll), left: 0, behavior: 'auto' });
+        });
+    });
+}
+
+function renderListPreservingScroll() {
+    const scrollPosition = window.scrollY;
+    if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+    }
+    renderList();
+    restorePageScroll(scrollPosition);
+}
+
 function openDrawer() {
+    pageScrollBeforeDrawer = window.scrollY;
+    resetDrawerScroll();
     sideDrawer.classList.add('active');
     drawerOverlay.classList.add('active');
+    requestAnimationFrame(resetDrawerScroll);
 }
 
 function closeDrawer() {
     sideDrawer.classList.remove('active');
     drawerOverlay.classList.remove('active');
+    resetDrawerScroll();
     jobForm.reset();
 
     // Reset status dropdown visually
@@ -57,6 +86,21 @@ function closeDrawer() {
     const jobPriorityInput = document.getElementById('jobPriority');
     if (jobPriorityInput) jobPriorityInput.value = 'Medium';
 
+    const outreachStatusInput = document.getElementById('jobOutreachStatus');
+    if (outreachStatusInput) outreachStatusInput.value = 'not-contacted';
+    document.querySelectorAll('.outreach-option').forEach(button => {
+        button.classList.toggle('selected', button.dataset.value === 'not-contacted');
+    });
+    const outreachPersonInput = document.getElementById('jobOutreachPerson');
+    if (outreachPersonInput) outreachPersonInput.value = '';
+    const outreachPersonDropdownSelected = document.getElementById('outreachPersonDropdownSelected');
+    if (outreachPersonDropdownSelected) outreachPersonDropdownSelected.textContent = 'Select person';
+    document.querySelectorAll('#outreachPersonDropdownList li').forEach(item => {
+        item.classList.toggle('selected', item.dataset.value === '');
+    });
+    const outreachUrlInput = document.getElementById('jobOutreachUrl');
+    if (outreachUrlInput) outreachUrlInput.value = '';
+
     if (window.resetAllCustomDatePickers) {
         window.resetAllCustomDatePickers();
     }
@@ -68,6 +112,8 @@ function closeDrawer() {
     if (window.updateVisualPipeline) {
         window.updateVisualPipeline('applied');
     }
+
+    restorePageScroll(pageScrollBeforeDrawer);
 }
 
 // Form Submission
@@ -91,6 +137,10 @@ async function handleFormSubmit(e) {
     const cvVersion = '';
     const salary = document.getElementById('jobSalary') ? document.getElementById('jobSalary').value : '';
     const interviewNotes = document.getElementById('jobInterviewNotes') ? document.getElementById('jobInterviewNotes').value : '';
+    const outreachStatus = document.getElementById('jobOutreachStatus') ? document.getElementById('jobOutreachStatus').value : 'not-contacted';
+    const outreachPerson = document.getElementById('jobOutreachPerson') ? document.getElementById('jobOutreachPerson').value : '';
+    const outreachDate = document.getElementById('jobOutreachDate') ? document.getElementById('jobOutreachDate').value : '';
+    const outreachUrl = document.getElementById('jobOutreachUrl') ? document.getElementById('jobOutreachUrl').value : '';
 
     const cvFileInput = document.getElementById('jobCvFile');
     const cvFile = cvFileInput ? cvFileInput.files[0] : null;
@@ -125,6 +175,10 @@ async function handleFormSubmit(e) {
         cvVersion,
         salary,
         interviewNotes,
+        outreachStatus,
+        outreachPerson,
+        outreachDate,
+        outreachUrl,
         statusHistory,
         hasCvFile: hasCvFile ? true : (removeCvFile ? false : (currentEditJobId ? (jobs.find(j => j.id === currentEditJobId) || {}).hasCvFile : false))
     };
@@ -154,13 +208,13 @@ async function handleFormSubmit(e) {
             await saveJobToSupabase(newJob);
         }
         saveToLocalStorage();
-        closeDrawer();
         renderList();
+        closeDrawer();
     } catch (err) {
         console.error('Failed to sync job:', err);
         saveToLocalStorage();
-        closeDrawer();
         renderList();
+        closeDrawer();
         alert('Saved locally, but cloud sync failed. Please try again.');
     }
 }
@@ -294,6 +348,37 @@ function updatePaginationControls(totalItems) {
     controls.appendChild(nextBtn);
 }
 
+function normalizeOutreachPerson(person) {
+    if (person === 'HR' || person === 'Recruiter') return 'Recruiter/HR';
+    if (person === 'User') return 'Employee';
+    return person || '';
+}
+
+function getOutreachMeta(job) {
+    const status = job.outreachStatus || 'not-contacted';
+    const person = normalizeOutreachPerson(job.outreachPerson);
+
+    if (status === 'replied') {
+        return {
+            label: person ? `${person} replied` : 'Replied',
+            icon: 'message-circle-check',
+            className: 'is-replied'
+        };
+    }
+    if (status === 'contacted') {
+        return {
+            label: person ? `${person} contacted` : 'Contacted',
+            icon: 'send',
+            className: 'is-contacted'
+        };
+    }
+    return {
+        label: 'Not contacted',
+        icon: 'message-circle-more',
+        className: ''
+    };
+}
+
 function createJobRow(job) {
     const row = document.createElement('div');
     row.className = 'job-row';
@@ -317,6 +402,8 @@ function createJobRow(job) {
     const locationText = escapeHTML(job.location);
     const statusText = escapeHTML(statusInfo.label);
     const priorityText = escapeHTML(priority);
+    const outreach = getOutreachMeta(job);
+    const outreachLabel = escapeHTML(outreach.label);
 
     // Format Location (Only show location)
     let locationHtml = '';
@@ -332,6 +419,9 @@ function createJobRow(job) {
             <span class="company-info" title="${companyText}">
                 <i data-lucide="building-2"></i> <span class="company-name">${companyText}</span>
                 ${job.platform ? `<span class="platform-badge">via ${platformText}</span>` : ''}
+                <button type="button" class="outreach-badge ${outreach.className}" aria-label="${outreachLabel}. Click to update outreach status." data-tooltip="${outreachLabel}" onclick="window.cycleOutreachStatus('${jobIdForJs}')">
+                    <i data-lucide="${outreach.icon}"></i>
+                </button>
             </span>
         </div>
         <div class="row-status">
@@ -368,6 +458,33 @@ function createJobRow(job) {
     
     return row;
 }
+
+window.cycleOutreachStatus = async function(id) {
+    const job = jobs.find(item => String(item.id) === String(id));
+    if (!job) return;
+
+    const statusOrder = ['not-contacted', 'contacted', 'replied'];
+    const currentIndex = statusOrder.indexOf(job.outreachStatus || 'not-contacted');
+    job.outreachStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
+
+    if (job.outreachStatus === 'not-contacted') {
+        job.outreachDate = '';
+    } else if (!job.outreachDate) {
+        job.outreachDate = new Date().toISOString().split('T')[0];
+    }
+
+    saveToLocalStorage();
+    renderListPreservingScroll();
+
+    if (remoteReady && currentUser) {
+        try {
+            await saveJobToSupabase(job);
+        } catch (err) {
+            console.error('Failed to sync outreach status:', err);
+            alert('Outreach status changed locally, but cloud sync failed.');
+        }
+    }
+};
 
 window.currentEditStatusHistory = [];
 
@@ -566,6 +683,23 @@ window.editJob = function(id) {
     document.getElementById('jobCompany').value = job.company || '';
     document.getElementById('jobLocation').value = job.location || '';
     document.getElementById('jobPlatform').value = job.platform || '';
+
+    const outreachStatus = job.outreachStatus || 'not-contacted';
+    const outreachStatusInput = document.getElementById('jobOutreachStatus');
+    if (outreachStatusInput) outreachStatusInput.value = outreachStatus;
+    document.querySelectorAll('.outreach-option').forEach(button => {
+        button.classList.toggle('selected', button.dataset.value === outreachStatus);
+    });
+    const outreachPerson = normalizeOutreachPerson(job.outreachPerson);
+    const outreachPersonInput = document.getElementById('jobOutreachPerson');
+    if (outreachPersonInput) outreachPersonInput.value = outreachPerson;
+    const outreachPersonDropdownSelected = document.getElementById('outreachPersonDropdownSelected');
+    if (outreachPersonDropdownSelected) outreachPersonDropdownSelected.textContent = outreachPerson || 'Select person';
+    document.querySelectorAll('#outreachPersonDropdownList li').forEach(item => {
+        item.classList.toggle('selected', item.dataset.value === outreachPerson);
+    });
+    const outreachUrlInput = document.getElementById('jobOutreachUrl');
+    if (outreachUrlInput) outreachUrlInput.value = job.outreachUrl || '';
     
     // Priority
     const priorityInput = document.getElementById('jobPriority');
@@ -614,6 +748,13 @@ window.editJob = function(id) {
         const d = new Date(job.followUp);
         if (!isNaN(d)) {
             document.querySelector('#jobFollowUp').previousElementSibling.value = `${String(d.getDate()).padStart(2, '0')} / ${String(d.getMonth() + 1).padStart(2, '0')} / ${d.getFullYear()}`;
+        }
+    }
+    if (job.outreachDate) {
+        document.getElementById('jobOutreachDate').value = job.outreachDate;
+        const d = new Date(job.outreachDate);
+        if (!isNaN(d)) {
+            document.querySelector('#jobOutreachDate').previousElementSibling.value = `${String(d.getDate()).padStart(2, '0')} / ${String(d.getMonth() + 1).padStart(2, '0')} / ${d.getFullYear()}`;
         }
     }
 
@@ -1253,7 +1394,6 @@ window.updateDashboardCards = function() {
             dashHitRate.textContent = '';
         }
     }
-
     if (dashPulseInsight) {
         dashPulseInsight.textContent = total > 0
             ? `${inProgress} active | ${feedbackRate || '0.0'}% got feedback`
