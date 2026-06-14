@@ -1,3 +1,66 @@
+const AUTH_LAST_ACTIVE_KEY = 'lamaraAuthLastActiveAt';
+const AUTH_INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000;
+const AUTH_ACTIVITY_WRITE_INTERVAL_MS = 60 * 1000;
+
+let lastAuthActivityWrite = 0;
+let authActivityTrackingReady = false;
+
+function getLastAuthActivity() {
+    const storedValue = Number(localStorage.getItem(AUTH_LAST_ACTIVE_KEY));
+    return Number.isFinite(storedValue) && storedValue > 0 ? storedValue : 0;
+}
+
+function rememberAuthActivity(force = false) {
+    if (!currentUser) return;
+
+    const now = Date.now();
+    if (!force && now - lastAuthActivityWrite < AUTH_ACTIVITY_WRITE_INTERVAL_MS) return;
+
+    localStorage.setItem(AUTH_LAST_ACTIVE_KEY, String(now));
+    lastAuthActivityWrite = now;
+}
+
+function clearAuthActivity() {
+    localStorage.removeItem(AUTH_LAST_ACTIVE_KEY);
+    lastAuthActivityWrite = 0;
+}
+
+function hasAuthSessionExpired() {
+    const lastActive = getLastAuthActivity();
+    return lastActive > 0 && Date.now() - lastActive >= AUTH_INACTIVITY_LIMIT_MS;
+}
+
+async function expireInactiveSession() {
+    if (!currentUser || !hasAuthSessionExpired()) return false;
+
+    await signOut({ openLogin: true, expired: true });
+    return true;
+}
+
+function setupAuthActivityTracking() {
+    if (authActivityTrackingReady) return;
+    authActivityTrackingReady = true;
+
+    const handleActivity = () => {
+        if (!currentUser) return;
+
+        if (hasAuthSessionExpired()) {
+            expireInactiveSession().catch(console.error);
+            return;
+        }
+
+        rememberAuthActivity();
+    };
+
+    ['pointerdown', 'keydown', 'touchstart'].forEach((eventName) => {
+        window.addEventListener(eventName, handleActivity, { passive: true });
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') handleActivity();
+    });
+}
+
 function toDbJob(job) {
     return {
         id: String(job.id),
@@ -76,6 +139,9 @@ function updateAuthUI() {
 }
 
 async function initAuth() {
+    setupAuthActivityTracking();
+    let sessionExpiredOnLoad = false;
+
     if (!supabaseClient) {
         updateAuthUI();
         isInitialLoad = false;
@@ -85,6 +151,19 @@ async function initAuth() {
     try {
         const { data } = await supabaseClient.auth.getSession();
         currentUser = data.session?.user || null;
+
+        if (currentUser && !isPasswordRecoveryUrl() && hasAuthSessionExpired()) {
+            try {
+                await supabaseClient.auth.signOut({ scope: 'local' });
+            } catch (signOutError) {
+                console.warn('Could not close the expired Supabase session:', signOutError);
+            }
+            currentUser = null;
+            clearAuthActivity();
+            sessionExpiredOnLoad = true;
+        } else if (currentUser) {
+            rememberAuthActivity(true);
+        }
     } catch (err) {
         console.warn('Supabase auth failed (possibly blocked by AdBlock or offline):', err);
         currentUser = null;
@@ -102,12 +181,20 @@ async function initAuth() {
 
     if (isPasswordRecoveryUrl()) {
         openAuthModal('updatePassword');
+    } else if (sessionExpiredOnLoad) {
+        openAuthModal();
+        showAuthError('Your session expired after 7 days of inactivity. Please sign in again.');
     }
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
         currentUser = session?.user || null;
         remoteReady = !!currentUser;
         updateAuthUI();
+        if (currentUser) {
+            rememberAuthActivity(true);
+        } else if (event === 'SIGNED_OUT') {
+            clearAuthActivity();
+        }
         if (event === 'PASSWORD_RECOVERY') {
             openAuthModal('updatePassword');
         }
@@ -298,6 +385,7 @@ async function signInWithPassword(e) {
             return;
         }
 
+        rememberAuthActivity(true);
         if (authForm) authForm.reset();
         closeAuthModal();
     } catch (err) {
@@ -423,7 +511,7 @@ async function signUpWithPassword() {
     }
 }
 
-async function signOut() {
+async function signOut(options = {}) {
     if (!supabaseClient) return;
 
     try {
@@ -431,6 +519,7 @@ async function signOut() {
     } catch (err) {
         console.error('Failed to sign out from server (likely already logged out or network blocked). Clearing local session anyway:', err);
     } finally {
+        clearAuthActivity();
         currentUser = null;
         remoteReady = false;
         updateAuthUI();
@@ -438,6 +527,11 @@ async function signOut() {
         // Return to offline workspace, preserving whatever offline data existed
         jobs = loadFromLocalStorage();
         renderList();
+
+        if (options.openLogin) {
+            openAuthModal();
+            showAuthError('Your session expired after 7 days of inactivity. Please sign in again.');
+        }
     }
 }
 
