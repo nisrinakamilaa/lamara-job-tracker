@@ -263,8 +263,14 @@ function renderList() {
         // Show empty state clone or loading
         if (isInitialLoad) {
             const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'empty-state';
-            loadingDiv.innerHTML = '<p>Loading your data...</p><span>Please wait a moment.</span>';
+            loadingDiv.className = 'jobs-loading-state';
+            loadingDiv.innerHTML = `
+                <span class="jobs-loading-spinner" aria-hidden="true"></span>
+                <div>
+                    <p>Loading your applications...</p>
+                    <span>Getting your latest data.</span>
+                </div>
+            `;
             listBody.appendChild(loadingDiv);
         } else {
             const clone = emptyStateTemplate.content.cloneNode(true);

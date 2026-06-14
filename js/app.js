@@ -477,6 +477,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize icons
     lucide.createIcons();
 
+    // Show a useful loading state while the saved session and cloud data are checked.
+    renderList();
+
     await initAuth();
     
     // Render initial state

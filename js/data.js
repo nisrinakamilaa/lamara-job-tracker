@@ -1,4 +1,8 @@
 // We load data from Local Storage or start empty.
+const CLOUD_JOBS_CACHE_PREFIX = 'lamaraCloudJobs:';
+let cloudJobsLoadPromise = null;
+let cloudJobsLoadUserId = null;
+
 function loadFromLocalStorage() {
     const saved = localStorage.getItem('lamaraJobs');
     if (saved) {
@@ -12,9 +16,38 @@ function loadFromLocalStorage() {
     return [];
 }
 
+function getCloudJobsCacheKey(userId = currentUser?.id) {
+    return userId ? `${CLOUD_JOBS_CACHE_PREFIX}${userId}` : '';
+}
+
+function loadCloudJobsCache(userId = currentUser?.id) {
+    const cacheKey = getCloudJobsCacheKey(userId);
+    if (!cacheKey) return [];
+
+    try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+        return Array.isArray(cached) ? cached : [];
+    } catch (error) {
+        console.warn('Could not read the cloud jobs cache:', error);
+        return [];
+    }
+}
+
+function saveCloudJobsCache(userId = currentUser?.id) {
+    const cacheKey = getCloudJobsCacheKey(userId);
+    if (!cacheKey) return;
+
+    try {
+        localStorage.setItem(cacheKey, JSON.stringify(jobs));
+    } catch (error) {
+        console.warn('Could not update the cloud jobs cache:', error);
+    }
+}
+
 function saveToLocalStorage() {
     if (currentUser) {
-        return; // Don't cache cloud data to local storage, leave the offline data alone
+        saveCloudJobsCache();
+        return;
     }
     localStorage.setItem('lamaraJobs', JSON.stringify(jobs));
 }
@@ -76,40 +109,66 @@ const CVStore = {
 async function loadJobsFromSupabase() {
     if (!supabaseClient || !currentUser) return;
 
-    const { data, error } = await supabaseClient
-        .from('jobs')
-        .select('*')
-        .order('date', { ascending: false });
+    const userId = currentUser.id;
+    if (cloudJobsLoadPromise && cloudJobsLoadUserId === userId) {
+        return cloudJobsLoadPromise;
+    }
 
-    if (error) {
-        console.error('Failed to load Supabase jobs:', error);
-        jobs = loadFromLocalStorage();
+    const cachedJobs = loadCloudJobsCache(userId);
+    if (cachedJobs.length > 0) {
+        jobs = cachedJobs;
         isInitialLoad = false;
         renderList();
-        return;
     }
 
-    const localJobs = loadFromLocalStorage();
-    jobs = (data || []).map(fromDbJob);
+    cloudJobsLoadUserId = userId;
+    cloudJobsLoadPromise = (async () => {
+        const { data, error } = await supabaseClient
+            .from('jobs')
+            .select('*')
+            .order('date', { ascending: false });
 
-    if (jobs.length === 0 && localJobs.length > 0) {
-        const shouldImport = confirm('Move your local applications to this account?');
-        if (shouldImport) {
-            jobs = localJobs;
-            try {
-                await saveAllJobsToSupabase();
-                alert('Success! Your local jobs have been saved to your account.');
-                // Safely clear the offline data since it's now in the cloud
-                localStorage.removeItem('lamaraJobs');
-            } catch (err) {
-                console.error('Failed to migrate local jobs to Supabase:', err);
-                alert('Error saving to cloud: ' + (err.message || err.error_description || 'Unknown error. Did you run the SQL schema?'));
+        if (error) {
+            console.error('Failed to load Supabase jobs:', error);
+            if (cachedJobs.length === 0) {
+                jobs = loadFromLocalStorage();
+                isInitialLoad = false;
+                renderList();
+            }
+            return;
+        }
+
+        const localJobs = loadFromLocalStorage();
+        jobs = (data || []).map(fromDbJob);
+
+        if (jobs.length === 0 && localJobs.length > 0) {
+            const shouldImport = confirm('Move your local applications to this account?');
+            if (shouldImport) {
+                jobs = localJobs;
+                try {
+                    await saveAllJobsToSupabase();
+                    alert('Success! Your local jobs have been saved to your account.');
+                    localStorage.removeItem('lamaraJobs');
+                } catch (err) {
+                    console.error('Failed to migrate local jobs to Supabase:', err);
+                    alert('Error saving to cloud: ' + (err.message || err.error_description || 'Unknown error. Did you run the SQL schema?'));
+                }
             }
         }
-    }
 
-    isInitialLoad = false;
-    renderList();
+        saveCloudJobsCache(userId);
+        isInitialLoad = false;
+        renderList();
+    })();
+
+    try {
+        await cloudJobsLoadPromise;
+    } finally {
+        if (cloudJobsLoadUserId === userId) {
+            cloudJobsLoadPromise = null;
+            cloudJobsLoadUserId = null;
+        }
+    }
 }
 
 async function saveJobToSupabase(job) {
