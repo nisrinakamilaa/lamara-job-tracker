@@ -427,7 +427,14 @@ function createJobRow(job) {
     const assessmentTypeText = escapeHTML(normalizedJob.assessmentType || '');
     const priorityText = escapeHTML(priority);
     const outreach = getOutreachMeta(job);
-    const outreachLabel = escapeHTML(outreach.label);
+    const outreachUrl = String(job.outreachUrl || '').trim();
+    const hasOutreachUrl = /^https?:\/\//i.test(outreachUrl);
+    const outreachTooltip = hasOutreachUrl
+        ? `Open ${outreach.label} profile`
+        : 'Add profile URL in Edit';
+    const outreachUrlForJs = hasOutreachUrl
+        ? escapeHTML(escapeJsString(outreachUrl))
+        : '';
 
     // Format Location (Only show location)
     let locationHtml = '';
@@ -443,7 +450,13 @@ function createJobRow(job) {
             <span class="company-info" title="${companyText}">
                 <i data-lucide="building-2"></i> <span class="company-name">${companyText}</span>
                 ${job.platform ? `<span class="platform-badge">via ${platformText}</span>` : ''}
-                <button type="button" class="outreach-badge ${outreach.className}" aria-label="${outreachLabel}. Click to update outreach status." data-tooltip="${outreachLabel}" onclick="window.cycleOutreachStatus('${jobIdForJs}')">
+                <button
+                    type="button"
+                    class="outreach-badge ${outreach.className} ${hasOutreachUrl ? 'has-profile-url' : 'is-disabled'}"
+                    aria-label="${escapeHTML(outreachTooltip)}"
+                    data-tooltip="${escapeHTML(outreachTooltip)}"
+                    ${hasOutreachUrl ? `onclick="window.openOutreachProfile('${outreachUrlForJs}')"` : 'disabled'}
+                >
                     <i data-lucide="${outreach.icon}"></i>
                 </button>
             </span>
@@ -486,31 +499,9 @@ function createJobRow(job) {
     return row;
 }
 
-window.cycleOutreachStatus = async function(id) {
-    const job = jobs.find(item => String(item.id) === String(id));
-    if (!job) return;
-
-    const statusOrder = ['not-contacted', 'contacted', 'replied'];
-    const currentIndex = statusOrder.indexOf(job.outreachStatus || 'not-contacted');
-    job.outreachStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
-
-    if (job.outreachStatus === 'not-contacted') {
-        job.outreachDate = '';
-    } else if (!job.outreachDate) {
-        job.outreachDate = new Date().toISOString().split('T')[0];
-    }
-
-    saveToLocalStorage();
-    renderListPreservingScroll();
-
-    if (remoteReady && currentUser) {
-        try {
-            await saveJobToSupabase(job);
-        } catch (err) {
-            console.error('Failed to sync outreach status:', err);
-            alert('Outreach status changed locally, but cloud sync failed.');
-        }
-    }
+window.openOutreachProfile = function(url) {
+    if (!/^https?:\/\//i.test(String(url || '').trim())) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
 };
 
 window.currentEditStatusHistory = [];
