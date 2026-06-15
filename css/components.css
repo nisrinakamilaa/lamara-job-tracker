@@ -2384,21 +2384,33 @@ body.dark-theme .priority-Low {
 
     .job-row {
         grid-template-columns: 1fr;
-        gap: 14px;
-        padding: 18px;
+        gap: 12px;
+        padding: 20px;
         min-height: 0;
     }
 
     .row-position {
         gap: 8px;
+        padding-bottom: 4px;
+    }
+
+    .row-position strong {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
     }
 
     .row-status,
     .col-priority,
     .col-next-step,
-    .row-date,
-    .row-actions {
-        justify-content: flex-start;
+    .row-date {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        justify-content: stretch;
         width: 100%;
     }
 
@@ -2406,7 +2418,7 @@ body.dark-theme .priority-Low {
     .job-row .col-priority::before,
     .job-row .col-next-step::before,
     .job-row .row-date::before {
-        min-width: 96px;
+        min-width: 0;
         font-family: var(--font-heading);
         font-size: 11px;
         font-weight: 700;
@@ -2420,9 +2432,35 @@ body.dark-theme .priority-Low {
     .job-row .col-next-step::before { content: 'Location'; }
     .job-row .row-date::before { content: 'Applied'; }
 
+    .row-status .status-badge,
+    .row-status .status-detail,
+    .col-priority .priority-badge,
+    .col-next-step > *,
+    .row-date > * {
+        grid-column: 2;
+        justify-self: start;
+        text-align: left;
+    }
+
+    .row-status .status-detail {
+        margin-top: -7px;
+    }
+
+    .col-next-step,
+    .row-date {
+        white-space: normal;
+    }
+
+    .col-next-step > * {
+        max-width: 100%;
+    }
+
     .row-actions {
+        width: 100%;
+        justify-content: flex-start;
         min-width: 0;
-        padding-top: 4px;
+        padding-top: 10px;
+        border-top: 1px dashed var(--border-color);
     }
 }
 
@@ -2490,7 +2528,14 @@ body.dark-theme .priority-Low {
     .job-row .col-priority::before,
     .job-row .col-next-step::before,
     .job-row .row-date::before {
-        min-width: 78px;
+        min-width: 0;
+    }
+
+    .row-status,
+    .col-priority,
+    .col-next-step,
+    .row-date {
+        grid-template-columns: 92px minmax(0, 1fr);
     }
 
     .side-drawer {
