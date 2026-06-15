@@ -935,15 +935,23 @@ body.dark-theme .btn-theme-toggle .moon-icon {
     align-items: center;
     justify-content: center;
     gap: 5px;
-    cursor: pointer;
+    cursor: default;
     transition: var(--transition);
     overflow: visible;
 }
 
-.outreach-badge:hover {
+.outreach-badge.has-profile-url {
+    cursor: pointer;
+}
+
+.outreach-badge.has-profile-url:hover {
     transform: translateY(-1px);
     border-color: var(--primary);
     box-shadow: var(--shadow-sm);
+}
+
+.outreach-badge.is-disabled {
+    opacity: 0.55;
 }
 
 .outreach-badge::after {
