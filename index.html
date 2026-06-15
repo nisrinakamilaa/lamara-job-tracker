@@ -17,7 +17,7 @@
     <!-- SheetJS for Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="css/main.css?v=51">
-    <link rel="stylesheet" href="css/components.css?v=52">
+    <link rel="stylesheet" href="css/components.css?v=53">
     <link rel="stylesheet" href="css/modal.css?v=51">
 </head>
 <body>
@@ -180,7 +180,7 @@
                     <ul class="dropdown-list" id="dropdownList">
                         <li data-value="all" class="selected">All Status</li>
                         <li data-value="applied">Applied</li>
-                        <li data-value="psychotest">Psychotest</li>
+                        <li data-value="assessment">Assessment</li>
                         <li data-value="interview-hr">Interview HR</li>
                         <li data-value="interview-user">Interview User</li>
                         <li data-value="mcu">MCU</li>
@@ -311,7 +311,7 @@
                                 </div>
                                 <ul class="dropdown-list" id="formDropdownList">
                                     <li data-value="applied" class="selected">Applied</li>
-                                    <li data-value="psychotest">Psychotest</li>
+                                    <li data-value="assessment">Assessment</li>
                                     <li data-value="interview-hr">Interview HR</li>
                                     <li data-value="interview-user">Interview User</li>
                                     <li data-value="mcu">MCU</li>
@@ -325,6 +325,26 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="form-group assessment-type-group" id="assessmentTypeGroup" hidden>
+                        <label>Assessment Type</label>
+                        <div class="custom-dropdown form-custom-dropdown" id="assessmentTypeDropdown">
+                            <div class="dropdown-header" id="assessmentTypeDropdownHeader">
+                                <span id="assessmentTypeDropdownSelected">Psychometric Test</span>
+                                <i data-lucide="chevron-down" class="chevron-icon"></i>
+                            </div>
+                            <ul class="dropdown-list" id="assessmentTypeDropdownList">
+                                <li data-value="Psychometric Test" class="selected">Psychometric Test</li>
+                                <li data-value="Coding Test">Coding Test</li>
+                                <li data-value="Case Study">Case Study</li>
+                                <li data-value="Excel Test">Excel Test</li>
+                                <li data-value="Technical Test">Technical Test</li>
+                                <li data-value="Written Test">Written Test</li>
+                                <li data-value="Other">Other</li>
+                            </ul>
+                            <input type="hidden" id="jobAssessmentType" value="Psychometric Test">
+                        </div>
+                    </div>
                     
                     <!-- Visual Pipeline -->
                     <div class="visual-pipeline">
@@ -332,8 +352,8 @@
                             <div class="step-dot"></div><span class="step-label">Applied</span>
                         </div>
                         <div class="pipeline-line"></div>
-                        <div class="pipeline-step" data-step="psychotest">
-                            <div class="step-dot"></div><span class="step-label">Test</span>
+                        <div class="pipeline-step" data-step="assessment">
+                            <div class="step-dot"></div><span class="step-label">Assess.</span>
                         </div>
                         <div class="pipeline-line"></div>
                         <div class="pipeline-step" data-step="interview-hr">
@@ -661,13 +681,13 @@
         </div>
     </div>
 
-    <script src="js/data.js?v=52"></script>
+    <script src="js/data.js?v=53"></script>
     <script src="js/utils.js?v=51"></script>
     <script src="js/dom.js?v=51"></script>
-    <script src="js/state.js?v=51"></script>
-    <script src="js/auth.js?v=52"></script>
-    <script src="js/ui.js?v=52"></script>
-    <script src="js/importExport.js?v=51"></script>
-    <script src="js/app.js?v=52"></script>
+    <script src="js/state.js?v=53"></script>
+    <script src="js/auth.js?v=53"></script>
+    <script src="js/ui.js?v=53"></script>
+    <script src="js/importExport.js?v=53"></script>
+    <script src="js/app.js?v=53"></script>
 </body>
 </html>

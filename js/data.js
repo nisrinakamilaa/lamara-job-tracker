@@ -3,11 +3,50 @@ const CLOUD_JOBS_CACHE_PREFIX = 'lamaraCloudJobs:';
 let cloudJobsLoadPromise = null;
 let cloudJobsLoadUserId = null;
 
+function normalizeStatus(status) {
+    return status === 'psychotest' ? 'assessment' : (status || 'applied');
+}
+
+function normalizeAssessmentType(value, originalStatus = '') {
+    if (value) return String(value);
+    return originalStatus === 'psychotest' ? 'Psychometric Test' : '';
+}
+
+function normalizeJobData(job) {
+    if (!job || typeof job !== 'object') return job;
+
+    const originalStatus = job.status || 'applied';
+    const normalizedStatus = normalizeStatus(originalStatus);
+    const assessmentType = normalizeAssessmentType(job.assessmentType, originalStatus);
+    const statusHistory = Array.isArray(job.statusHistory)
+        ? job.statusHistory.map(item => {
+            if (!item || typeof item !== 'object') return item;
+            const itemOriginalStatus = item.status || 'applied';
+            return {
+                ...item,
+                status: normalizeStatus(itemOriginalStatus),
+                assessmentType: normalizeAssessmentType(
+                    item.assessmentType || (normalizeStatus(itemOriginalStatus) === normalizedStatus ? assessmentType : ''),
+                    itemOriginalStatus
+                )
+            };
+        })
+        : [];
+
+    return {
+        ...job,
+        status: normalizedStatus,
+        assessmentType,
+        statusHistory
+    };
+}
+
 function loadFromLocalStorage() {
     const saved = localStorage.getItem('lamaraJobs');
     if (saved) {
         try {
-            return JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+            return Array.isArray(parsed) ? parsed.map(normalizeJobData) : [];
         } catch (e) {
             console.error('Error parsing Local Storage', e);
             return [];
@@ -26,7 +65,7 @@ function loadCloudJobsCache(userId = currentUser?.id) {
 
     try {
         const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
-        return Array.isArray(cached) ? cached : [];
+        return Array.isArray(cached) ? cached.map(normalizeJobData) : [];
     } catch (error) {
         console.warn('Could not read the cloud jobs cache:', error);
         return [];

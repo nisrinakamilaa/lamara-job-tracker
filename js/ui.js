@@ -74,6 +74,16 @@ function closeDrawer() {
     });
     const jobStatusInput = document.getElementById('jobStatus');
     if (jobStatusInput) jobStatusInput.value = 'applied';
+    const assessmentTypeInput = document.getElementById('jobAssessmentType');
+    if (assessmentTypeInput) assessmentTypeInput.value = 'Psychometric Test';
+    const assessmentTypeSelected = document.getElementById('assessmentTypeDropdownSelected');
+    if (assessmentTypeSelected) assessmentTypeSelected.textContent = 'Psychometric Test';
+    document.querySelectorAll('#assessmentTypeDropdownList li').forEach(item => {
+        item.classList.toggle('selected', item.dataset.value === 'Psychometric Test');
+    });
+    if (window.updateAssessmentTypeVisibility) {
+        window.updateAssessmentTypeVisibility('applied');
+    }
 
     // Reset priority dropdown visually
     const priorityDropdownSelected = document.getElementById('priorityDropdownSelected');
@@ -123,7 +133,10 @@ async function handleFormSubmit(e) {
     const url = document.getElementById('jobUrl').value;
     const title = document.getElementById('jobTitle').value;
     const company = document.getElementById('jobCompany').value;
-    const status = document.getElementById('jobStatus').value;
+    const status = normalizeStatus(document.getElementById('jobStatus').value);
+    const assessmentType = status === 'assessment'
+        ? (document.getElementById('jobAssessmentType')?.value || 'Psychometric Test')
+        : '';
     const date = document.getElementById('jobDate').value;
     const location = document.getElementById('jobLocation').value;
     const platform = document.getElementById('jobPlatform').value;
@@ -151,11 +164,13 @@ async function handleFormSubmit(e) {
     if (currentEditJobId) {
         statusHistory = [...(window.currentEditStatusHistory || [])];
         
-        if (statusHistory.length > 0 && statusHistory[statusHistory.length - 1].status !== status) {
-            statusHistory.push({ status: status, date: new Date().toISOString() });
+        if (statusHistory.length > 0 && normalizeStatus(statusHistory[statusHistory.length - 1].status) !== status) {
+            statusHistory.push({ status, date: new Date().toISOString(), assessmentType });
+        } else if (status === 'assessment' && statusHistory.length > 0) {
+            statusHistory[statusHistory.length - 1].assessmentType = assessmentType;
         }
     } else {
-        statusHistory = [{ status: status, date: new Date().toISOString() }];
+        statusHistory = [{ status, date: new Date().toISOString(), assessmentType }];
     }
 
     const newJob = {
@@ -164,6 +179,7 @@ async function handleFormSubmit(e) {
         title,
         company,
         status,
+        assessmentType,
         date: date || new Date().toISOString().split('T')[0],
         location,
         platform,
@@ -235,7 +251,7 @@ function renderList() {
 
     // Apply Filters & Search
     let filteredJobs = jobs.filter(job => {
-        const matchFilter = currentFilter === 'all' || job.status === currentFilter;
+        const matchFilter = currentFilter === 'all' || normalizeStatus(job.status) === currentFilter;
         const matchPriority = currentPriorityFilter === 'all' || (job.priority || 'Medium') === currentPriorityFilter;
         const matchSearch = job.title.toLowerCase().includes(searchQuery) || 
                             job.company.toLowerCase().includes(searchQuery);
@@ -395,7 +411,8 @@ function createJobRow(job) {
         ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : '-';
 
-    const statusInfo = CONSTANTS.STATUS_MAP[job.status] || { label: job.status, badgeClass: '' };
+    const normalizedJob = normalizeJobData(job);
+    const statusInfo = CONSTANTS.STATUS_MAP[normalizedJob.status] || { label: normalizedJob.status, badgeClass: '' };
 
     // Format Priority
     const priority = job.priority || 'Medium';
@@ -407,6 +424,7 @@ function createJobRow(job) {
     const platformText = escapeHTML(job.platform);
     const locationText = escapeHTML(job.location);
     const statusText = escapeHTML(statusInfo.label);
+    const assessmentTypeText = escapeHTML(normalizedJob.assessmentType || '');
     const priorityText = escapeHTML(priority);
     const outreach = getOutreachMeta(job);
     const outreachLabel = escapeHTML(outreach.label);
@@ -432,6 +450,9 @@ function createJobRow(job) {
         </div>
         <div class="row-status">
             <span class="status-badge ${statusInfo.badgeClass}">${statusText}</span>
+            ${normalizedJob.status === 'assessment' && assessmentTypeText
+                ? `<span class="status-detail" title="${assessmentTypeText}">${assessmentTypeText}</span>`
+                : ''}
         </div>
         <div class="col-priority">
             <span class="priority-badge ${priorityClass}">${priorityText}</span>
@@ -521,8 +542,12 @@ function renderStatusHistory() {
         const dateObj = new Date(item.date);
         const formattedDateValue = !isNaN(dateObj) ? dateObj.toISOString().split('T')[0] : '';
         const displayDate = !isNaN(dateObj) ? `${String(dateObj.getDate()).padStart(2, '0')} / ${String(dateObj.getMonth() + 1).padStart(2, '0')} / ${dateObj.getFullYear()}` : '-';
-        const mappedLabel = CONSTANTS.STATUS_MAP[item.status] ? CONSTANTS.STATUS_MAP[item.status].label : item.status;
-        const mappedLabelText = escapeHTML(mappedLabel);
+        const normalizedItemStatus = normalizeStatus(item.status);
+        const mappedLabel = CONSTANTS.STATUS_MAP[normalizedItemStatus] ? CONSTANTS.STATUS_MAP[normalizedItemStatus].label : normalizedItemStatus;
+        const assessmentSuffix = normalizedItemStatus === 'assessment' && item.assessmentType
+            ? ` · ${item.assessmentType}`
+            : '';
+        const mappedLabelText = escapeHTML(`${mappedLabel}${assessmentSuffix}`);
 
         const deleteBtnHtml = index > 0 ? `<button type="button" class="btn-remove-status" onclick="window.removeStatusHistory(${index})" title="Remove this status"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>` : '';
 
@@ -580,7 +605,7 @@ window.removeStatusHistory = function(index) {
     window.currentEditStatusHistory.splice(index, 1);
     
     if (index === window.currentEditStatusHistory.length) {
-        const newLastStatus = window.currentEditStatusHistory[window.currentEditStatusHistory.length - 1].status;
+        const newLastStatus = normalizeStatus(window.currentEditStatusHistory[window.currentEditStatusHistory.length - 1].status);
         
         const statusInput = document.getElementById('jobStatus');
         if (statusInput) statusInput.value = newLastStatus;
@@ -595,6 +620,7 @@ window.removeStatusHistory = function(index) {
             else li.classList.remove('selected');
         });
         if (window.updateVisualPipeline) window.updateVisualPipeline(newLastStatus);
+        if (window.updateAssessmentTypeVisibility) window.updateAssessmentTypeVisibility(newLastStatus);
     }
     
     renderStatusHistory();
@@ -720,18 +746,28 @@ window.editJob = function(id) {
 
     // Status
     const statusInput = document.getElementById('jobStatus');
-    if (statusInput) statusInput.value = job.status || 'applied';
+    const normalizedJobStatus = normalizeStatus(job.status);
+    if (statusInput) statusInput.value = normalizedJobStatus;
     const formDropdownSelected = document.getElementById('formDropdownSelected');
     const formDropdownItems = document.querySelectorAll('#formDropdownList li');
     if (formDropdownSelected) {
-        const mappedLabel = CONSTANTS.STATUS_MAP[job.status] ? CONSTANTS.STATUS_MAP[job.status].label : 'Applied';
+        const mappedLabel = CONSTANTS.STATUS_MAP[normalizedJobStatus] ? CONSTANTS.STATUS_MAP[normalizedJobStatus].label : 'Applied';
         formDropdownSelected.textContent = mappedLabel;
     }
     formDropdownItems.forEach(li => {
-        if (li.dataset.value === (job.status || 'applied')) li.classList.add('selected');
+        if (li.dataset.value === normalizedJobStatus) li.classList.add('selected');
         else li.classList.remove('selected');
     });
-    if (window.updateVisualPipeline) window.updateVisualPipeline(job.status || 'applied');
+    const assessmentType = job.assessmentType || 'Psychometric Test';
+    const assessmentTypeInput = document.getElementById('jobAssessmentType');
+    if (assessmentTypeInput) assessmentTypeInput.value = assessmentType;
+    const assessmentTypeSelected = document.getElementById('assessmentTypeDropdownSelected');
+    if (assessmentTypeSelected) assessmentTypeSelected.textContent = assessmentType;
+    document.querySelectorAll('#assessmentTypeDropdownList li').forEach(item => {
+        item.classList.toggle('selected', item.dataset.value === assessmentType);
+    });
+    if (window.updateAssessmentTypeVisibility) window.updateAssessmentTypeVisibility(normalizedJobStatus);
+    if (window.updateVisualPipeline) window.updateVisualPipeline(normalizedJobStatus);
 
     // Dates
     if (job.date) {
@@ -773,7 +809,7 @@ window.editJob = function(id) {
         if (
             job.statusHistory.length === 1 &&
             job.date &&
-            job.statusHistory[0].status === job.status &&
+            normalizeStatus(job.statusHistory[0].status) === normalizedJobStatus &&
             job.statusHistory[0].date !== job.date
         ) {
             job.statusHistory[0].date = job.date;
@@ -781,7 +817,11 @@ window.editJob = function(id) {
         }
         window.currentEditStatusHistory = JSON.parse(JSON.stringify(job.statusHistory));
     } else {
-        window.currentEditStatusHistory = [{ status: job.status, date: job.date || new Date().toISOString() }];
+        window.currentEditStatusHistory = [{
+            status: normalizedJobStatus,
+            date: job.date || new Date().toISOString(),
+            assessmentType: normalizedJobStatus === 'assessment' ? assessmentType : ''
+        }];
         job.statusHistory = JSON.parse(JSON.stringify(window.currentEditStatusHistory));
         saveToLocalStorage();
     }
@@ -1360,10 +1400,11 @@ window.updateDashboardCards = function() {
     today.setHours(0, 0, 0, 0);
 
     jobs.forEach(j => {
-        if (['applied', 'psychotest'].includes(j.status)) inProgress++;
-        else if (['interview-hr', 'interview-user', 'mcu'].includes(j.status)) interview++;
-        else if (['offering', 'accepted'].includes(j.status)) offer++;
-        if (j.status && j.status !== 'applied' && j.status !== 'ghosted') feedback++;
+        const normalizedStatus = normalizeStatus(j.status);
+        if (['applied', 'assessment'].includes(normalizedStatus)) inProgress++;
+        else if (['interview-hr', 'interview-user', 'mcu'].includes(normalizedStatus)) interview++;
+        else if (['offering', 'accepted'].includes(normalizedStatus)) offer++;
+        if (normalizedStatus && normalizedStatus !== 'applied' && normalizedStatus !== 'ghosted') feedback++;
         const followUpDate = parseValidDate(j.followUp);
         const deadlineDate = parseValidDate(j.deadline);
         let needsAttention = false;
@@ -1447,10 +1488,11 @@ function renderStatusChart(filteredJobs) {
     const ctx = canvas.getContext('2d');
     
     // Aggregate by status — ordered by pipeline stage for logical reading
-    const statusOrder = ['applied', 'psychotest', 'interview-hr', 'interview-user', 'mcu', 'offering', 'accepted', 'rejected', 'ghosted', 'withdrawn'];
+    const statusOrder = ['applied', 'assessment', 'interview-hr', 'interview-user', 'mcu', 'offering', 'accepted', 'rejected', 'ghosted', 'withdrawn'];
     const statusCounts = {};
     filteredJobs.forEach(job => {
-        statusCounts[job.status] = (statusCounts[job.status] || 0) + 1;
+        const normalizedStatus = normalizeStatus(job.status);
+        statusCounts[normalizedStatus] = (statusCounts[normalizedStatus] || 0) + 1;
     });
 
     const statusRank = statusOrder.reduce((acc, status, index) => {
@@ -1470,7 +1512,7 @@ function renderStatusChart(filteredJobs) {
 
     const sagePalette = {
         'applied': '#8B9E8A',
-        'psychotest': '#B9AACF',
+        'assessment': '#B9AACF',
         'interview-hr': '#D9C4B4',
         'interview-user': '#C7B3A4',
         'mcu': '#AAB09D',
@@ -1880,10 +1922,11 @@ function renderActivityChart(filteredJobs) {
 window.updateVisualPipeline = function(status) {
     const pipeline = document.querySelector('.visual-pipeline');
     if (!pipeline) return;
+    status = normalizeStatus(status);
 
     const defaultSteps = [
         { status: 'applied', label: 'Applied' },
-        { status: 'psychotest', label: 'Test' },
+        { status: 'assessment', label: 'Assess.' },
         { status: 'interview-hr', label: 'HR Int.' },
         { status: 'interview-user', label: 'User Int.' },
         { status: 'mcu', label: 'MCU' },
@@ -1896,8 +1939,9 @@ window.updateVisualPipeline = function(status) {
 
     const actualSequence = [];
     history.forEach(item => {
-        if (pipelineStatuses.has(item.status) && !actualSequence.includes(item.status)) {
-            actualSequence.push(item.status);
+        const normalizedItemStatus = normalizeStatus(item.status);
+        if (pipelineStatuses.has(normalizedItemStatus) && !actualSequence.includes(normalizedItemStatus)) {
+            actualSequence.push(normalizedItemStatus);
         }
     });
 

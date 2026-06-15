@@ -1008,6 +1008,12 @@ body.dark-theme .outreach-badge.is-contacted {
     justify-content: center;
 }
 
+.row-status {
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
 .status-badge {
     display: inline-flex;
     align-items: center;
@@ -1025,9 +1031,23 @@ body.dark-theme .outreach-badge.is-contacted {
     color: var(--primary-dark);
 }
 
+.badge-assessment,
 .badge-psychotest {
     background-color: var(--accent-lavender-light);
     color: #766897;
+}
+
+.status-detail {
+    display: block;
+    max-width: 120px;
+    overflow: hidden;
+    color: var(--text-light);
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.2;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .badge-interview-hr,
@@ -1056,6 +1076,7 @@ body.dark-theme .outreach-badge.is-contacted {
 }
 
 body.dark-theme .badge-applied,
+body.dark-theme .badge-assessment,
 body.dark-theme .badge-psychotest,
 body.dark-theme .badge-interview-hr,
 body.dark-theme .badge-interview-user,
@@ -1070,9 +1091,14 @@ body.dark-theme .badge-withdrawn {
     border: 1px solid var(--border-color);
 }
 
+body.dark-theme .badge-assessment,
 body.dark-theme .badge-psychotest {
     background-color: var(--accent-lavender-light);
     color: #D6C8EF;
+}
+
+.assessment-type-group[hidden] {
+    display: none;
 }
 
 body.dark-theme .badge-interview-hr,

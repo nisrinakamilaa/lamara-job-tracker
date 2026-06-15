@@ -19,7 +19,7 @@ let isInitialLoad = true;
 const CONSTANTS = {
     STATUS_MAP: {
         'applied': { label: 'Applied', badgeClass: 'badge-applied' },
-        'psychotest': { label: 'Psychotest', badgeClass: 'badge-psychotest' },
+        'assessment': { label: 'Assessment', badgeClass: 'badge-assessment' },
         'interview-hr': { label: 'Interview HR', badgeClass: 'badge-interview-hr' },
         'interview-user': { label: 'Interview User', badgeClass: 'badge-interview-user' },
         'mcu': { label: 'MCU', badgeClass: 'badge-mcu' },

@@ -8,6 +8,7 @@ create table if not exists public.jobs (
     title text not null default '',
     company text not null default '',
     status text not null default 'applied',
+    assessment_type text default '',
     date date not null default current_date,
     location text default '',
     platform text default '',
@@ -34,6 +35,7 @@ alter table public.jobs add column if not exists outreach_status text not null d
 alter table public.jobs add column if not exists outreach_person text default '';
 alter table public.jobs add column if not exists outreach_date date;
 alter table public.jobs add column if not exists outreach_url text default '';
+alter table public.jobs add column if not exists assessment_type text default '';
 
 alter table public.jobs enable row level security;
 

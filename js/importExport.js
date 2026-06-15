@@ -42,14 +42,16 @@ function serializeStatusHistory(history) {
     return JSON.stringify(Array.isArray(history) ? history : []);
 }
 
-function parseImportedStatusHistory(value, fallbackStatus, fallbackDate) {
+function parseImportedStatusHistory(value, fallbackStatus, fallbackDate, fallbackAssessmentType = '') {
     const normalizedFallbackDate = normalizeImportedDate(fallbackDate);
-    const fallbackHistory = fallbackStatus && fallbackStatus !== 'applied'
+    const normalizedFallbackStatus = normalizeStatus(fallbackStatus);
+    fallbackAssessmentType = normalizeAssessmentType(fallbackAssessmentType, fallbackStatus);
+    const fallbackHistory = normalizedFallbackStatus && normalizedFallbackStatus !== 'applied'
         ? [
             { status: 'applied', date: normalizedFallbackDate },
-            { status: fallbackStatus, date: normalizedFallbackDate }
+            { status: normalizedFallbackStatus, date: normalizedFallbackDate, assessmentType: fallbackAssessmentType }
         ]
-        : [{ status: fallbackStatus || 'applied', date: normalizedFallbackDate }];
+        : [{ status: normalizedFallbackStatus || 'applied', date: normalizedFallbackDate }];
 
     if (!value) return fallbackHistory;
 
@@ -59,10 +61,14 @@ function parseImportedStatusHistory(value, fallbackStatus, fallbackDate) {
 
         const cleaned = parsed
             .filter(item => item && item.status)
-            .map(item => ({
-                status: String(item.status),
-                date: normalizeImportedDate(item.date || normalizedFallbackDate)
-            }));
+            .map(item => {
+                const originalStatus = String(item.status);
+                return {
+                    status: normalizeStatus(originalStatus),
+                    date: normalizeImportedDate(item.date || normalizedFallbackDate),
+                    assessmentType: normalizeAssessmentType(item.assessmentType, originalStatus)
+                };
+            });
 
         return cleaned.length > 0 ? cleaned : fallbackHistory;
     } catch (err) {
@@ -80,7 +86,7 @@ window.exportToCSV = function() {
         "ID", "Title", "Company", "Location", "Platform", "Date Applied", 
         "Status", "Priority", "Deadline", "Follow Up", "Salary", "URL", 
         "Desc Summary", "CV Version", "Interview Notes", "Reminder Notes", "General Notes", "Status History",
-        "Outreach Status", "Outreach Person", "Outreach Date", "Outreach URL"
+        "Outreach Status", "Outreach Person", "Outreach Date", "Outreach URL", "Assessment Type"
     ];
     
     const rows = jobs.map(job => [
@@ -90,7 +96,7 @@ window.exportToCSV = function() {
         escapeCSVCell(job.location || ''),
         escapeCSVCell(job.platform || ''),
         job.date,
-        job.status,
+        normalizeStatus(job.status),
         job.priority || 'Medium',
         job.deadline || '',
         job.followUp || '',
@@ -105,7 +111,8 @@ window.exportToCSV = function() {
         job.outreachStatus || 'not-contacted',
         escapeCSVCell(job.outreachPerson || ''),
         job.outreachDate || '',
-        job.outreachUrl || ''
+        job.outreachUrl || '',
+        escapeCSVCell(job.assessmentType || '')
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -130,7 +137,7 @@ window.exportToExcel = function() {
         "ID", "Title", "Company", "Location", "Platform", "Date Applied", 
         "Status", "Priority", "Deadline", "Follow Up", "Salary", "URL", 
         "Desc Summary", "CV Version", "Interview Notes", "Reminder Notes", "General Notes", "Status History",
-        "Outreach Status", "Outreach Person", "Outreach Date", "Outreach URL"
+        "Outreach Status", "Outreach Person", "Outreach Date", "Outreach URL", "Assessment Type"
     ];
     
     const rows = jobs.map(job => [
@@ -140,7 +147,7 @@ window.exportToExcel = function() {
         job.location || '',
         job.platform || '',
         job.date,
-        job.status,
+        normalizeStatus(job.status),
         job.priority || 'Medium',
         job.deadline || '',
         job.followUp || '',
@@ -155,7 +162,8 @@ window.exportToExcel = function() {
         job.outreachStatus || 'not-contacted',
         job.outreachPerson || '',
         job.outreachDate || '',
-        job.outreachUrl || ''
+        job.outreachUrl || '',
+        job.assessmentType || ''
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -189,8 +197,10 @@ window.importFromCSV = function(file) {
             if (rawCols.length < 7) continue; // basic validation
             
             const appliedDate = normalizeImportedDate(rawCols[5]);
-            const importedStatus = rawCols[6] || 'applied';
-            const statusHistory = parseImportedStatusHistory(rawCols[17], importedStatus, appliedDate);
+            const originalImportedStatus = rawCols[6] || 'applied';
+            const importedStatus = normalizeStatus(originalImportedStatus);
+            const assessmentType = normalizeAssessmentType(rawCols[22], originalImportedStatus);
+            const statusHistory = parseImportedStatusHistory(rawCols[17], importedStatus, appliedDate, assessmentType);
 
             const newJob = {
                 id: rawCols[0] || Date.now().toString() + i,
@@ -200,6 +210,7 @@ window.importFromCSV = function(file) {
                 platform: rawCols[4] || '',
                 date: appliedDate,
                 status: importedStatus,
+                assessmentType,
                 priority: rawCols[7] || 'Medium',
                 deadline: rawCols[8] || '',
                 followUp: rawCols[9] || '',
@@ -269,8 +280,10 @@ window.importFromExcel = function(file) {
                 
                 // Map back to object
                 const appliedDate = normalizeImportedDate(rawCols[5]);
-                const importedStatus = String(rawCols[6] || 'applied');
-                const statusHistory = parseImportedStatusHistory(rawCols[17], importedStatus, appliedDate);
+                const originalImportedStatus = String(rawCols[6] || 'applied');
+                const importedStatus = normalizeStatus(originalImportedStatus);
+                const assessmentType = normalizeAssessmentType(rawCols[22], originalImportedStatus);
+                const statusHistory = parseImportedStatusHistory(rawCols[17], importedStatus, appliedDate, assessmentType);
 
                 const newJob = {
                     id: String(rawCols[0] || Date.now().toString() + i),
@@ -280,6 +293,7 @@ window.importFromExcel = function(file) {
                     platform: String(rawCols[4] || ''),
                     date: appliedDate,
                     status: importedStatus,
+                    assessmentType,
                     priority: String(rawCols[7] || 'Medium'),
                     deadline: String(rawCols[8] || ''),
                     followUp: String(rawCols[9] || ''),

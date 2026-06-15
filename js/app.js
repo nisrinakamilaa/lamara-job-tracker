@@ -232,6 +232,20 @@ function setupEventListeners() {
     const formDropdownSelected = document.getElementById('formDropdownSelected');
     const formDropdownItems = formDropdownList.querySelectorAll('li');
     const jobStatusInput = document.getElementById('jobStatus');
+    const assessmentTypeGroup = document.getElementById('assessmentTypeGroup');
+    const assessmentTypeDropdown = document.getElementById('assessmentTypeDropdown');
+    const assessmentTypeDropdownHeader = document.getElementById('assessmentTypeDropdownHeader');
+    const assessmentTypeDropdownSelected = document.getElementById('assessmentTypeDropdownSelected');
+    const assessmentTypeDropdownItems = document.querySelectorAll('#assessmentTypeDropdownList li');
+    const jobAssessmentTypeInput = document.getElementById('jobAssessmentType');
+
+    window.updateAssessmentTypeVisibility = function(status) {
+        if (!assessmentTypeGroup) return;
+        assessmentTypeGroup.hidden = normalizeStatus(status) !== 'assessment';
+        if (assessmentTypeGroup.hidden && assessmentTypeDropdown) {
+            assessmentTypeDropdown.classList.remove('open');
+        }
+    };
 
     formDropdownHeader.addEventListener('click', () => {
         formStatusDropdown.classList.toggle('open');
@@ -259,8 +273,33 @@ function setupEventListeners() {
             if (window.updateVisualPipeline) {
                 window.updateVisualPipeline(e.target.dataset.value);
             }
+            window.updateAssessmentTypeVisibility(e.target.dataset.value);
         });
     });
+
+    if (assessmentTypeDropdownHeader) {
+        assessmentTypeDropdownHeader.addEventListener('click', () => {
+            assessmentTypeDropdown.classList.toggle('open');
+        });
+    }
+
+    assessmentTypeDropdownItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            assessmentTypeDropdownItems.forEach(li => li.classList.remove('selected'));
+            e.target.classList.add('selected');
+            if (assessmentTypeDropdownSelected) assessmentTypeDropdownSelected.textContent = e.target.textContent;
+            if (jobAssessmentTypeInput) jobAssessmentTypeInput.value = e.target.dataset.value;
+            assessmentTypeDropdown.classList.remove('open');
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (assessmentTypeDropdown && !assessmentTypeDropdown.contains(e.target)) {
+            assessmentTypeDropdown.classList.remove('open');
+        }
+    });
+
+    window.updateAssessmentTypeVisibility(jobStatusInput?.value || 'applied');
 
     // Form Custom Dropdown Logic (Priority)
     const priorityDropdown = document.getElementById('priorityDropdown');

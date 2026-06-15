@@ -68,7 +68,8 @@ function toDbJob(job) {
         url: job.url || '',
         title: job.title || '',
         company: job.company || '',
-        status: job.status || 'applied',
+        status: normalizeStatus(job.status),
+        assessment_type: job.assessmentType || '',
         date: job.date || new Date().toISOString().split('T')[0],
         location: job.location || '',
         platform: job.platform || '',
@@ -91,12 +92,13 @@ function toDbJob(job) {
 }
 
 function fromDbJob(row) {
-    return {
+    return normalizeJobData({
         id: row.id,
         url: row.url || '',
         title: row.title || '',
         company: row.company || '',
         status: row.status || 'applied',
+        assessmentType: row.assessment_type || '',
         date: row.date || new Date().toISOString().split('T')[0],
         location: row.location || '',
         platform: row.platform || '',
@@ -115,7 +117,7 @@ function fromDbJob(row) {
         outreachUrl: row.outreach_url || '',
         statusHistory: row.status_history || [],
         hasCvFile: !!row.has_cv_file
-    };
+    });
 }
 
 function updateAuthUI() {
